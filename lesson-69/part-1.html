@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажер: Закон Кулона (Модулі)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+            showProcessingMessages: false,
+            messageStyle: "none",
+            extensions: ["tex2jax.js"],
+            jax: ["input/TeX", "output/HTML-CSS"],
+            tex2jax: {
+                inlineMath: [['$','$'], ['\\(','\\)']],
+                displayMath: [['$$','$$']]
+            },
+            "HTML-CSS": { 
+                scale: 100,
+                availableFonts: ["TeX"],
+                preferredFont: "TeX",
+                webFont: "TeX",
+                imageFont: null,
+                linebreaks: { automatic: true }
+            }
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS_HTML"></script>
+    <style>
+        body { height: 100vh; margin: 0; overflow: hidden; background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        
+        .app-grid { 
+            display: grid; 
+            grid-template-columns: 1.1fr 0.9fr; 
+            height: 100vh; 
+            padding: 20px; 
+            gap: 20px; 
+        }
+        
+        .canvas-area { 
+            background: #ffffff; 
+            border-radius: 32px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+            overflow: hidden;
+        }
+
+        .flower-wrapper {
+            position: relative;
+            width: 100%;
+            height: 420px; 
+            margin-top: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flower-center-point {
+            position: relative;
+            width: 1px;
+            height: 1px;
+        }
+
+        .petal {
+            position: absolute;
+            width: 130px; 
+            height: 195px;
+            background: #ffffff;
+            border: 2px dashed #cbd5e1;
+            border-radius: 50% 50% 50% 50% / 75% 75% 25% 25%;
+            left: -65px; 
+            bottom: 15px; 
+            transform-origin: center bottom;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: flex-start;
+            padding-top: 30px;
+            z-index: 10;
+        }
+
+        .petal:hover:not(.filled) {
+            border-color: #6366f1;
+            background: #f5f3ff;
+            transform: rotate(var(--angle)) translateY(-15px) !important;
+        }
+
+        .petal.active { 
+            border-color: #fbbf24; 
+            background: #fffbeb; 
+            box-shadow: 0 0 25px rgba(251, 191, 36, 0.4); 
+            z-index: 25; 
+        }
+
+        .petal.filled { 
+            border: 2px solid #6366f1; 
+            background: white; 
+            border-style: solid;
+        }
+
+        .petal.falling {
+            animation: petalFall 1.2s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes petalFall {
+            0% { transform: rotate(var(--angle)) translateY(0); opacity: 1; }
+            100% { transform: rotate(calc(var(--angle) + 45deg)) translateY(800px) rotate(120deg); opacity: 0; }
+        }
+
+        .center-disk {
+            width: 160px; 
+            height: 160px;
+            background: radial-gradient(circle at 30% 30%, #fbbf24, #f59e0b);
+            border-radius: 50%;
+            z-index: 40;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+            text-align: center; 
+            border: 6px solid #fef3c7;
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+            position: absolute;
+            top: -80px;
+            left: -80px;
+        }
+
+        .stem {
+            position: absolute;
+            width: 16px; 
+            height: 300px;
+            background: linear-gradient(to bottom, #10b981, #059669);
+            top: 10px;
+            left: -8px;
+            z-index: 5;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .sidebar { 
+            background: #ffffff; 
+            border-radius: 32px; 
+            padding: 25px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+        
+        .option-btn {
+            width: 100%; 
+            padding: 12px; 
+            background: #f8fafc; 
+            border: 2px solid #e2e8f0;
+            border-radius: 16px; 
+            font-size: 1.1rem; 
+            cursor: pointer; 
+            transition: all 0.2s;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-btn:hover { 
+            border-color: #6366f1; 
+            background: #f5f3ff;
+            transform: scale(1.02);
+        }
+
+        .option-btn.used { opacity: 0.15; pointer-events: none; }
+
+        .win-overlay {
+            position: absolute; inset: 0; background: rgba(255,255,255,0.96);
+            z-index: 100; display: none; flex-direction: column; 
+            align-items: center; justify-content: center; border-radius: 32px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-grid">
+    <div class="canvas-area">
+        <h1 class="mt-6 text-2xl font-black text-slate-800 uppercase tracking-widest text-center">Закон Кулона</h1>
+        
+        <div class="flower-wrapper">
+            <div class="flower-center-point">
+                <div class="stem"></div>
+                <div id="petals"></div>
+                <div class="center-disk">
+                    <span class="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Основна формула</span>
+                    <div class="text-xl font-bold">
+                        $$F = k \frac{|q_1| |q_2|}{r^2}$$
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="win-screen" class="win-overlay">
+            <div class="text-8xl mb-4">🌻</div>
+            <h2 class="text-4xl font-black text-indigo-950">БРАВО!</h2>
+            <p class="text-slate-500 mt-2">Всі формули виведено правильно.</p>
+            <button onclick="location.reload()" class="mt-8 bg-indigo-600 text-white px-10 py-4 rounded-full font-bold shadow-lg hover:bg-indigo-700 transition-all">Грати ще раз</button>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div>
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Хід роботи</h3>
+            <div id="status" class="bg-indigo-50 border-2 border-indigo-100 p-5 rounded-2xl text-center font-bold text-indigo-900 text-lg min-h-[80px] flex items-center justify-center">
+                Оберіть пелюстку на квіточці
+            </div>
+        </div>
+        
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Банк формул</h3>
+            <div id="bank" class="grid grid-cols-1 gap-2 overflow-y-auto pr-2"></div>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-xl border border-dashed border-slate-200">
+            <p class="text-[11px] text-slate-500 text-center uppercase tracking-wider font-semibold">
+                Порада: Всі заряди $q$ беруться за модулем $|q|$
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Масив даних з правильними формулами
+    const data = [
+        { id: 0, label: '$|q_1|$', formula: '$\\frac{F r^2}{k |q_2|}$', angle: 0 },
+        { id: 1, label: '$|q_2|$', formula: '$\\frac{F r^2}{k |q_1|}$', angle: 60 },
+        { id: 2, label: '$r$', formula: '$\\sqrt{\\frac{k |q_1| |q_2|}{F}}$', angle: 120 },
+        { id: 3, label: '$k$', formula: '$\\frac{F r^2}{|q_1| |q_2|}$', angle: 180 },
+        { id: 4, label: '$r^2$', formula: '$\\frac{k |q_1| |q_2|}{F}$', angle: 240 },
+        { id: 5, label: '$|q_1| \\cdot |q_2|$', formula: '$\\frac{F r^2}{k}$', angle: 300 }
+    ];
+
+    // Хибні варіанти для ускладнення завдання
+    const distractors = [
+        '$\\frac{k}{F r^2}$', 
+        '$F r^2 |q_1| |q_2|$', 
+        '$\\frac{|q_1| |q_2|}{F}$',
+        '$\\sqrt{\\frac{F}{k |q_1| |q_2|}}$'
+    ];
+    
+    let selectedIdx = -1;
+    let solved = 0;
+    let audioCtx = null;
+
+    function playSound(freq, type = 'sine') {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = type;
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            o.start(); o.stop(audioCtx.currentTime + 0.3);
+        } catch(e) {}
+    }
+
+    function init() {
+        const pContainer = document.getElementById('petals');
+        const bContainer = document.getElementById('bank');
+
+        // Створення пелюсток
+        data.forEach((item, i) => {
+            const p = document.createElement('div');
+            p.className = 'petal';
+            p.id = `p-${i}`;
+            p.style.setProperty('--angle', `${item.angle}deg`);
+            p.style.transform = `rotate(${item.angle}deg)`;
+            
+            p.innerHTML = `
+                <div style="transform:rotate(-${item.angle}deg)" class="flex flex-col items-center">
+                    <span class="text-indigo-600 font-black text-2xl">${item.label}</span>
+                </div>
+            `;
+            p.onclick = () => select(i);
+            pContainer.appendChild(p);
+        });
+
+        // Створення кнопок у банку відповідей
+        const options = [...data.map(d => d.formula), ...distractors].sort(() => Math.random() - 0.5);
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = opt;
+            btn.onclick = () => check(opt, btn);
+            bContainer.appendChild(btn);
+        });
+
+        if (window.MathJax) MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+    }
+
+    function select(i) {
+        if (data[i].done) return;
+        selectedIdx = i;
+        document.querySelectorAll('.petal').forEach(p => p.classList.remove('active'));
+        document.getElementById(`p-${i}`).classList.add('active');
+        document.getElementById('status').innerHTML = `Виразіть шукану величину: <span class="text-indigo-600 ml-2">${data[i].label}</span>`;
+        if (window.MathJax) MathJax.Hub.Queue(["Typeset", MathJax.Hub, document.getElementById('status')]);
+    }
+
+    function check(val, btn) {
+        if (selectedIdx === -1) {
+            document.getElementById('status').innerText = "Спочатку оберіть пелюстку!";
+            return;
+        }
+        
+        const petal = document.getElementById(`p-${selectedIdx}`);
+        
+        if (val === data[selectedIdx].formula) {
+            playSound(800);
+            data[selectedIdx].done = true;
+            petal.classList.remove('active');
+            petal.classList.add('filled');
+            
+            // Відображення результату на пелюстці
+            petal.innerHTML = `
+                <div style="transform:rotate(-${data[selectedIdx].angle}deg)" class="flex flex-col items-center text-center px-1">
+                    <span class="text-indigo-400 font-bold text-[11px] mb-2">${data[selectedIdx].label} =</span>
+                    <div class="text-[14px] leading-tight font-bold text-slate-800">${val}</div>
+                </div>
+            `;
+            
+            btn.classList.add('used');
+            selectedIdx = -1;
+            solved++;
+            document.getElementById('status').innerText = "Правильно! Обирайте далі.";
+            
+            if (solved === data.length) {
+                setTimeout(() => {
+                    document.getElementById('win-screen').style.display = 'flex';
+                    playSound(1000, 'square');
+                }, 500);
+            }
+        } else {
+            playSound(150, 'sawtooth');
+            petal.classList.add('falling');
+            selectedIdx = -1;
+            document.getElementById('status').innerText = "Помилка! Пелюстка впала.";
+            
+            setTimeout(() => {
+                petal.classList.remove('falling', 'active');
+                void petal.offsetWidth; // скидання анімації
+            }, 1300);
+        }
+        
+        if (window.MathJax) MathJax.Hub.Queue(["Typeset", MathJax.Hub, petal]);
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
