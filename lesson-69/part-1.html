@@ -3,28 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тренажер: Закон Кулона (Адаптивний)</title>
+    <title>Тренажер: Закон Кулона (GitHub Ready)</title>
+    <!-- Використовуємо стабільні CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script type="text/x-mathjax-config">
-        MathJax.Hub.Config({
-            showProcessingMessages: false,
-            messageStyle: "none",
-            extensions: ["tex2jax.js"],
-            jax: ["input/TeX", "output/HTML-CSS"],
-            tex2jax: {
-                inlineMath: [['$','$'], ['\\(','\\)']],
-                displayMath: [['$$','$$']]
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$']]
             },
-            "HTML-CSS": { 
-                scale: 90,
-                availableFonts: ["TeX"],
-                preferredFont: "TeX",
-                webFont: "TeX",
-                linebreaks: { automatic: true }
+            svg: {
+                fontCache: 'global'
             }
-        });
+        };
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         :root {
             --flower-scale: 1;
@@ -38,6 +31,7 @@
             margin: 0; 
             background-color: #f8fafc; 
             font-family: system-ui, -apple-system, sans-serif; 
+            overflow-x: hidden;
         }
         
         .app-grid { 
@@ -65,7 +59,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             border: 1px solid #f1f5f9;
             overflow: hidden;
-            min-height: 500px;
+            min-height: 550px;
         }
 
         .flower-wrapper {
@@ -102,3 +96,287 @@
             justify-content: flex-start;
             padding-top: calc(25px * var(--flower-scale));
             z-index: 10;
+        }
+
+        .petal:hover:not(.filled) {
+            border-color: #6366f1;
+            background: #f5f3ff;
+            transform: rotate(var(--angle)) translateY(-10px) !important;
+        }
+
+        .petal.active { 
+            border-color: #fbbf24; 
+            background: #fffbeb; 
+            box-shadow: 0 0 25px rgba(251, 191, 36, 0.4); 
+            z-index: 25; 
+        }
+
+        .petal.filled { 
+            border: 2px solid #6366f1; 
+            background: white; 
+            border-style: solid;
+        }
+
+        .petal.falling {
+            animation: petalFall 1.2s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes petalFall {
+            0% { transform: rotate(var(--angle)) translateY(0); opacity: 1; }
+            100% { transform: rotate(calc(var(--angle) + 45deg)) translateY(800px) rotate(120deg); opacity: 0; }
+        }
+
+        .center-disk {
+            width: calc(160px * var(--flower-scale)); 
+            height: calc(160px * var(--flower-scale));
+            background: radial-gradient(circle at 30% 30%, #fbbf24, #f59e0b);
+            border-radius: 50%;
+            z-index: 40;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+            text-align: center; 
+            border: 4px solid #fef3c7;
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+            position: absolute;
+            top: calc(-80px * var(--flower-scale));
+            left: calc(-80px * var(--flower-scale));
+        }
+
+        .stem {
+            position: absolute;
+            width: 12px; 
+            height: 400px;
+            background: linear-gradient(to bottom, #10b981, #059669);
+            top: 10px;
+            left: -6px;
+            z-index: 5;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .sidebar { 
+            background: #ffffff; 
+            border-radius: 24px; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+        
+        .option-btn {
+            width: 100%; 
+            padding: 10px; 
+            background: #f8fafc; 
+            border: 2px solid #e2e8f0;
+            border-radius: 12px; 
+            font-size: 1rem; 
+            cursor: pointer; 
+            transition: all 0.2s;
+            min-height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-btn:hover { 
+            border-color: #6366f1; 
+            background: #f5f3ff;
+            transform: translateY(-2px);
+        }
+
+        .option-btn.used { opacity: 0.15; pointer-events: none; }
+
+        .win-overlay {
+            position: absolute; inset: 0; background: rgba(255,255,255,0.96);
+            z-index: 100; display: none; flex-direction: column; 
+            align-items: center; justify-content: center; border-radius: 24px;
+            text-align: center; padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-grid">
+    <div class="canvas-area">
+        <h1 class="mt-6 text-xl md:text-2xl font-black text-slate-800 uppercase tracking-widest text-center px-4">Закон Кулона</h1>
+        
+        <div class="flower-wrapper">
+            <div class="flower-center-point">
+                <div class="stem"></div>
+                <div id="petals"></div>
+                <div class="center-disk">
+                    <span class="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Формула</span>
+                    <div class="text-sm md:text-lg font-bold">
+                        $$F = k \frac{|q_1| |q_2|}{r^2}$$
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="win-screen" class="win-overlay">
+            <div class="text-6xl md:text-8xl mb-4">🌻</div>
+            <h2 class="text-3xl md:text-4xl font-black text-indigo-950">БРАВО!</h2>
+            <p class="text-slate-500 mt-2">Всі формули виведено правильно.</p>
+            <button onclick="location.reload()" class="mt-8 bg-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-indigo-700 transition-all">Грати ще раз</button>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div>
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Хід роботи</h3>
+            <div id="status" class="bg-indigo-50 border-2 border-indigo-100 p-4 rounded-xl text-center font-bold text-indigo-900 text-base min-h-[75px] flex items-center justify-center">
+                Оберіть пелюстку на квіточці
+            </div>
+        </div>
+        
+        <div class="flex-1 flex flex-col overflow-hidden min-h-[300px]">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Банк формул</h3>
+            <div id="bank" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 overflow-y-auto pr-1"></div>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200">
+            <p class="text-[10px] text-slate-500 text-center uppercase tracking-wider font-semibold">
+                Порада: Всі заряди $q$ беруться за модулем $|q|$
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const data = [
+        { id: 0, label: '$|q_1|$', formula: '$\\frac{F r^2}{k |q_2|}$', angle: 0 },
+        { id: 1, label: '$|q_2|$', formula: '$\\frac{F r^2}{k |q_1|}$', angle: 60 },
+        { id: 2, label: '$r$', formula: '$\\sqrt{\\frac{k |q_1| |q_2|}{F}}$', angle: 120 },
+        { id: 3, label: '$k$', formula: '$\\frac{F r^2}{|q_1| |q_2|}$', angle: 180 },
+        { id: 4, label: '$r^2$', formula: '$\\frac{k |q_1| |q_2|}{F}$', angle: 240 },
+        { id: 5, label: '$|q_1| \\cdot |q_2|$', formula: '$\\frac{F r^2}{k}$', angle: 300 }
+    ];
+
+    const distractors = [
+        '$\\frac{k}{F r^2}$', 
+        '$F r^2 |q_1| |q_2|$', 
+        '$\\frac{|q_1| |q_2|}{F}$',
+        '$\\sqrt{\\frac{F}{k |q_1| |q_2|}}$'
+    ];
+    
+    let selectedIdx = -1;
+    let solved = 0;
+    let audioCtx = null;
+
+    function playSound(freq, type = 'sine') {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = type;
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            o.start(); o.stop(audioCtx.currentTime + 0.3);
+        } catch(e) {}
+    }
+
+    function refreshMath(el) {
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([el]);
+        }
+    }
+
+    function init() {
+        const pContainer = document.getElementById('petals');
+        const bContainer = document.getElementById('bank');
+
+        data.forEach((item, i) => {
+            const p = document.createElement('div');
+            p.className = 'petal';
+            p.id = `p-${i}`;
+            p.style.setProperty('--angle', `${item.angle}deg`);
+            p.style.transform = `rotate(${item.angle}deg)`;
+            
+            p.innerHTML = `
+                <div style="transform:rotate(-${item.angle}deg)" class="flex flex-col items-center">
+                    <span class="text-indigo-600 font-black text-lg md:text-2xl">${item.label}</span>
+                </div>
+            `;
+            p.onclick = () => select(i);
+            pContainer.appendChild(p);
+        });
+
+        const options = [...data.map(d => d.formula), ...distractors].sort(() => Math.random() - 0.5);
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = opt;
+            btn.onclick = () => check(opt, btn);
+            bContainer.appendChild(btn);
+        });
+
+        if (window.MathJax) window.MathJax.typesetPromise();
+    }
+
+    function select(i) {
+        if (data[i].done) return;
+        selectedIdx = i;
+        document.querySelectorAll('.petal').forEach(p => p.classList.remove('active'));
+        document.getElementById(`p-${i}`).classList.add('active');
+        const statusEl = document.getElementById('status');
+        statusEl.innerHTML = `Виразіть: <span class="text-indigo-600 ml-2">${data[i].label}</span>`;
+        refreshMath(statusEl);
+    }
+
+    function check(val, btn) {
+        if (selectedIdx === -1) {
+            document.getElementById('status').innerText = "Спочатку оберіть пелюстку!";
+            return;
+        }
+        
+        const petal = document.getElementById(`p-${selectedIdx}`);
+        
+        if (val === data[selectedIdx].formula) {
+            playSound(800);
+            data[selectedIdx].done = true;
+            petal.classList.remove('active');
+            petal.classList.add('filled');
+            
+            petal.innerHTML = `
+                <div style="transform:rotate(-${data[selectedIdx].angle}deg)" class="flex flex-col items-center text-center px-1">
+                    <span class="text-indigo-400 font-bold text-[9px] md:text-[11px] mb-1">${data[selectedIdx].label} =</span>
+                    <div class="text-[11px] md:text-[14px] leading-tight font-bold text-slate-800">${val}</div>
+                </div>
+            `;
+            
+            btn.classList.add('used');
+            selectedIdx = -1;
+            solved++;
+            document.getElementById('status').innerText = "Правильно! Далі...";
+            
+            if (solved === data.length) {
+                setTimeout(() => {
+                    document.getElementById('win-screen').style.display = 'flex';
+                    playSound(1000, 'square');
+                }, 500);
+            }
+        } else {
+            playSound(150, 'sawtooth');
+            petal.classList.add('falling');
+            selectedIdx = -1;
+            document.getElementById('status').innerText = "Помилка! Спробуйте іншу.";
+            
+            setTimeout(() => {
+                petal.classList.remove('falling', 'active');
+            }, 1300);
+        }
+        refreshMath(petal);
+    }
+
+    // Запуск після повного завантаження сторінки
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
