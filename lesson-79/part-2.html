@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажер: Вольтметр</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #fdf2f2; }
+        .voltmeter-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1.5 / 1;
+            background: #f1f5f9;
+            border: 8px solid #475569;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0 auto;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .scale-svg {
+            width: 100%;
+            height: 100%;
+        }
+        .needle {
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: 250px 320px;
+        }
+        .feedback-correct { color: #15803d; font-weight: bold; }
+        .feedback-wrong { color: #b91c1c; font-weight: bold; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
+    <header class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-slate-800">Тренажер: Аналоговий вольтметр</h1>
+        <p class="text-slate-600 mt-2">Навчись визначати ціну поділки та напругу</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <!-- Voltmeter Visual -->
+        <div class="voltmeter-container">
+            <svg id="voltmeter" viewBox="0 0 500 350" class="scale-svg">
+                <!-- Outer Arch -->
+                <path d="M 50 300 A 200 200 0 0 1 450 300" fill="none" stroke="#1e293b" stroke-width="4"/>
+                
+                <!-- Ticks and Numbers -->
+                <g id="scale-marks"></g>
+                <g id="scale-numbers"></g>
+
+                <!-- Center Symbol -->
+                <text x="250" y="220" text-anchor="middle" font-size="40" font-weight="bold" fill="#1e293b">V</text>
+                
+                <!-- Needle -->
+                <line id="needle" x1="250" y1="320" x2="250" y2="100" stroke="#dc2626" stroke-width="4" stroke-linecap="round" class="needle" />
+                <circle cx="250" cy="320" r="10" fill="#334155" />
+            </svg>
+        </div>
+
+        <!-- Task & Controls -->
+        <div class="space-y-6">
+            <div id="step-1" class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500">
+                <h2 class="font-bold text-purple-800 mb-2">Крок 1: Ціна поділки (C)</h2>
+                <p class="text-sm mb-3">Визнач ціну поділки шкали вольтметра.</p>
+                <div class="flex gap-2">
+                    <input type="number" id="input-division" step="0.01" class="w-full border-2 border-slate-300 rounded px-3 py-2 focus:border-purple-500 outline-none" placeholder="0.0">
+                    <button onclick="checkDivision()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition">OK</button>
+                </div>
+                <p id="msg-division" class="text-xs mt-2 min-h-[1.2rem]"></p>
+            </div>
+
+            <div id="step-2" class="bg-slate-50 p-4 rounded-lg border-l-4 border-slate-300 opacity-50 pointer-events-none transition-opacity">
+                <h2 class="font-bold text-slate-800 mb-2">Крок 2: Показ приладу (U)</h2>
+                <p class="text-sm mb-3">Яку напругу показує вольтметр зараз?</p>
+                <div class="flex gap-2">
+                    <input type="number" id="input-value" step="0.01" class="w-full border-2 border-slate-300 rounded px-3 py-2 focus:border-indigo-500 outline-none" placeholder="0.0">
+                    <button onclick="checkValue()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded transition">OK</button>
+                </div>
+                <p id="msg-value" class="text-xs mt-2 min-h-[1.2rem]"></p>
+            </div>
+
+            <button onclick="generateNewTask()" class="w-full py-3 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-700 transition transform active:scale-95">
+                Нове завдання
+            </button>
+        </div>
+    </div>
+
+    <!-- Instruction -->
+    <footer class="mt-8 p-4 bg-slate-50 rounded-lg text-sm text-slate-600">
+        <p><strong>Порада:</strong> <br>
+        1. Оберіть дві найближчі позначки з числами.<br>
+        2. Відніміть від більшого менше та поділіть на кількість поділок між ними.<br>
+        3. <b>Ціна поділки</b> допоможе вам точно визначити напругу <i>U</i>.</p>
+    </footer>
+</div>
+
+<script>
+    let currentMax = 10;
+    let currentDivisionsPerUnit = 2;
+    let currentPrice = 0.5;
+    let currentReading = 0;
+
+    function generateNewTask() {
+        // Presets for voltmeter (ranges and division counts)
+        const presets = [
+            { max: 3, divs: 10 },   // Price 0.1
+            { max: 6, divs: 5 },    // Price 0.2
+            { max: 12, divs: 2 },   // Price 0.5
+            { max: 15, divs: 5 },   // Price 0.2
+            { max: 250, divs: 0.1 } // Case for high voltage (special handling)
+        ];
+        
+        // Let's stick to simple school lab presets
+        const configPresets = [
+            { max: 3, divs: 10 },
+            { max: 6, divs: 5 },
+            { max: 15, divs: 2 },
+            { max: 5, divs: 10 },
+            { max: 10, divs: 5 }
+        ];
+
+        const config = configPresets[Math.floor(Math.random() * configPresets.length)];
+        
+        currentMax = config.max;
+        currentDivisionsPerUnit = config.divs;
+        currentPrice = 1 / currentDivisionsPerUnit;
+        
+        const totalTicks = currentMax * currentDivisionsPerUnit;
+        const randomTick = Math.floor(Math.random() * (totalTicks + 1));
+        currentReading = parseFloat((randomTick * currentPrice).toFixed(2));
+
+        drawScale();
+        moveNeedle();
+
+        // Reset UI
+        document.getElementById('step-2').classList.add('opacity-50', 'pointer-events-none');
+        document.getElementById('step-2').classList.remove('border-indigo-500');
+        document.getElementById('input-division').value = '';
+        document.getElementById('input-value').value = '';
+        document.getElementById('msg-division').textContent = '';
+        document.getElementById('msg-value').textContent = '';
+        document.getElementById('input-division').disabled = false;
+    }
+
+    function drawScale() {
+        const marksGroup = document.getElementById('scale-marks');
+        const numbersGroup = document.getElementById('scale-numbers');
+        marksGroup.innerHTML = '';
+        numbersGroup.innerHTML = '';
+
+        const startAngle = -60;
+        const endAngle = 60;
+        const totalTicks = currentMax * currentDivisionsPerUnit;
+
+        for (let i = 0; i <= totalTicks; i++) {
+            const angle = startAngle + (i / totalTicks) * (endAngle - startAngle);
+            const rad = (angle - 90) * (Math.PI / 180);
+            
+            const isMajor = i % currentDivisionsPerUnit === 0;
+            const length = isMajor ? 25 : 12;
+            const strokeWidth = isMajor ? 3 : 1.5;
+
+            const x1 = 250 + 200 * Math.cos(rad);
+            const y1 = 320 + 200 * Math.sin(rad);
+            const x2 = 250 + (200 - length) * Math.cos(rad);
+            const y2 = 320 + (200 - length) * Math.sin(rad);
+
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x1);
+            line.setAttribute("y1", y1);
+            line.setAttribute("x2", x2);
+            line.setAttribute("y2", y2);
+            line.setAttribute("stroke", "#1e293b");
+            line.setAttribute("stroke-width", strokeWidth);
+            marksGroup.appendChild(line);
+
+            if (isMajor) {
+                const tx = 250 + 160 * Math.cos(rad);
+                const ty = 320 + 160 * Math.sin(rad);
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", tx);
+                text.setAttribute("y", ty);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("dominant-baseline", "middle");
+                text.setAttribute("font-size", "16");
+                text.setAttribute("font-weight", "600");
+                text.setAttribute("fill", "#334155");
+                text.textContent = (i / currentDivisionsPerUnit);
+                numbersGroup.appendChild(text);
+            }
+        }
+    }
+
+    function moveNeedle() {
+        const startAngle = -60;
+        const endAngle = 60;
+        const targetAngle = startAngle + (currentReading / currentMax) * (endAngle - startAngle);
+        document.getElementById('needle').style.transform = `rotate(${targetAngle}deg)`;
+    }
+
+    function checkDivision() {
+        const val = parseFloat(document.getElementById('input-division').value);
+        const msg = document.getElementById('msg-division');
+        
+        if (Math.abs(val - currentPrice) < 0.001) {
+            msg.innerHTML = '<span class="feedback-correct">✓ Вірно!</span> Ціна поділки розрахована правильно.';
+            document.getElementById('step-2').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('step-2').classList.add('border-indigo-500');
+            document.getElementById('input-division').disabled = true;
+        } else {
+            msg.innerHTML = '<span class="feedback-wrong">✗ Спробуй ще раз. Перевір розрахунки.</span>';
+        }
+    }
+
+    function checkValue() {
+        const val = parseFloat(document.getElementById('input-value').value);
+        const msg = document.getElementById('msg-value');
+        
+        if (Math.abs(val - currentReading) < 0.001) {
+            msg.innerHTML = `<span class="feedback-correct">✓ Чудово! Напруга U = ${currentReading} В.</span>`;
+        } else {
+            msg.innerHTML = '<span class="feedback-wrong">✗ Помилка. Подивись уважніше на стрілку.</span>';
+        }
+    }
+
+    window.onload = generateNewTask;
+</script>
+
+</body>
+</html>
