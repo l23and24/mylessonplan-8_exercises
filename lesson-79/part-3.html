@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Вправа: Сила струму СІ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc; 
+            touch-action: pan-y; 
+        }
+        .sortable-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .sortable-item {
+            cursor: grab;
+            transition: all 0.2s ease;
+            user-select: none;
+            touch-action: none; /* Важливо для мобільних */
+            background: white;
+            border: 2px solid #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .sortable-item.dragging {
+            opacity: 0.5;
+            background-color: #f1f5f9;
+            border-color: #3b82f6;
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .math-sup {
+            font-size: 0.75em;
+            vertical-align: super;
+            line-height: 0;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
+    <header class="text-center mb-6">
+        <h1 class="text-2xl font-bold text-slate-800">Впорядкування сили струму</h1>
+        <p class="text-slate-600 mt-2">Розташуйте величини в порядку <strong>зростання</strong> (від найменшої до найбільшої)</p>
+    </header>
+
+    <div id="sortable-list" class="sortable-list mb-8">
+        <!-- Елементи будуть тут -->
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-4">
+        <button onclick="checkOrder()" class="flex-1 py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition transform active:scale-95 shadow-md">
+            Перевірити результат
+        </button>
+        <button onclick="generateTask()" class="flex-1 py-4 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition shadow-sm">
+            Нові величини
+        </button>
+    </div>
+
+    <div id="feedback" class="mt-6 p-4 rounded-xl hidden text-center font-semibold text-lg"></div>
+
+    <div class="mt-8 p-5 bg-blue-50 rounded-2xl border-l-8 border-blue-400 text-sm text-slate-700 shadow-inner">
+        <p class="font-bold mb-3 text-blue-900 text-base">Довідник (система СІ):</p>
+        <div class="space-y-3">
+            <div class="flex justify-between border-b border-blue-100 pb-1">
+                <span>1 мкА (мікроампер)</span>
+                <span class="font-mono text-right ml-4">0,000001 А = 10<span class="math-sup">-6</span> А</span>
+            </div>
+            <div class="flex justify-between border-b border-blue-100 pb-1">
+                <span>1 мА (міліампер)</span>
+                <span class="font-mono text-right ml-4">0,001 А = 10<span class="math-sup">-3</span> А</span>
+            </div>
+            <div class="flex justify-between border-b border-blue-100 pb-1">
+                <span>1 кА (кілоампер)</span>
+                <span class="font-mono text-right ml-4">1000 А = 10<span class="math-sup">3</span> А</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const units = [
+        { label: 'мкА', factor: 1e-6 },
+        { label: 'мА', factor: 1e-3 },
+        { label: 'А', factor: 1 },
+        { label: 'кА', factor: 1e3 }
+    ];
+
+    let currentItems = [];
+    const listContainer = document.getElementById('sortable-list');
+
+    function generateTask() {
+        const feedback = document.getElementById('feedback');
+        listContainer.innerHTML = '';
+        feedback.classList.add('hidden');
+        currentItems = [];
+        
+        for (let i = 0; i < 5; i++) {
+            const unit = units[Math.floor(Math.random() * units.length)];
+            let value;
+            
+            if (unit.label === 'мкА') value = Math.floor(Math.random() * 800) + 100;
+            else if (unit.label === 'мА') value = Math.floor(Math.random() * 800) + 1;
+            else if (unit.label === 'А') value = parseFloat((Math.random() * 10).toFixed(2));
+            else value = parseFloat((Math.random() * 4).toFixed(2));
+
+            currentItems.push({
+                display: `${value} ${unit.label}`,
+                siValue: value * unit.factor,
+                id: 'item-' + Math.random().toString(36).substr(2, 9)
+            });
+        }
+
+        currentItems.sort(() => Math.random() - 0.5);
+
+        currentItems.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'sortable-item shadow-sm';
+            div.draggable = true;
+            div.dataset.id = item.id;
+            div.innerHTML = `
+                <span class="font-bold text-xl text-slate-800 pointer-events-none">${item.display}</span>
+                <div class="flex items-center gap-3 pointer-events-none">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Перетягніть</span>
+                    <div class="p-2 bg-slate-50 rounded-lg">
+                        <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                        </svg>
+                    </div>
+                </div>
+            `;
+            addEvents(div);
+            listContainer.appendChild(div);
+        });
+    }
+
+    function addEvents(item) {
+        // Миша
+        item.addEventListener('dragstart', () => item.classList.add('dragging'));
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+
+        // Тач (мобільні)
+        item.addEventListener('touchstart', (e) => {
+            item.classList.add('dragging');
+        }, { passive: true });
+
+        item.addEventListener('touchend', () => {
+            item.classList.remove('dragging');
+        });
+
+        item.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const draggingItem = document.querySelector('.dragging');
+            if (!draggingItem) return;
+
+            const afterElement = getDragAfterElement(listContainer, touch.clientY);
+            if (afterElement == null) {
+                listContainer.appendChild(draggingItem);
+            } else {
+                listContainer.insertBefore(draggingItem, afterElement);
+            }
+        }, { passive: false });
+    }
+
+    listContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const draggingItem = document.querySelector('.dragging');
+        if (!draggingItem) return;
+        const afterElement = getDragAfterElement(listContainer, e.clientY);
+        if (afterElement == null) {
+            listContainer.appendChild(draggingItem);
+        } else {
+            listContainer.insertBefore(draggingItem, afterElement);
+        }
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.sortable-item:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function checkOrder() {
+        const items = [...listContainer.querySelectorAll('.sortable-item')];
+        const userValues = items.map(el => {
+            const itemObj = currentItems.find(i => i.id === el.dataset.id);
+            return itemObj ? itemObj.siValue : 0;
+        });
+
+        let isCorrect = true;
+        for (let i = 0; i < userValues.length - 1; i++) {
+            if (userValues[i] > userValues[i + 1]) {
+                isCorrect = false;
+                break;
+            }
+        }
+
+        const feedback = document.getElementById('feedback');
+        feedback.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700', 'border-green-300', 'border-red-300');
+        feedback.classList.add('border');
+        
+        if (isCorrect) {
+            feedback.innerHTML = "Правильно! Всі величини розташовані вірно. 🏆";
+            feedback.classList.add('bg-green-100', 'text-green-700', 'border-green-300');
+        } else {
+            feedback.innerHTML = "Спробуйте ще раз! Перевірте переведення в Ампери. 🧐";
+            feedback.classList.add('bg-red-100', 'text-red-700', 'border-red-300');
+        }
+        
+        feedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Запуск відразу після завантаження структури документа
+    document.addEventListener('DOMContentLoaded', generateTask);
+    // На випадок, якщо DOMContentLoaded вже спрацював
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        generateTask();
+    }
+</script>
+
+</body>
+</html>
