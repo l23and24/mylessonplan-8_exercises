@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Фізика: Задача 80.1</title>
+    <style>
+        /* Стилі для клітинок таблиці */
+        .grid-cell {
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            min-width: 32px;
+            max-width: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #d1d5db;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 1rem;
+            border-radius: 4px;
+            user-select: none;
+            background: white;
+            margin: 2px auto;
+        }
+
+        .grid-cell.selected {
+            background-color: #3b82f6;
+            border-color: #2563eb;
+            color: white;
+            font-weight: bold;
+        }
+
+        .grid-cell.correct {
+            background-color: #10b981;
+            border-color: #059669;
+            color: white;
+        }
+
+        .grid-cell.wrong {
+            background-color: #ef4444;
+            border-color: #dc2626;
+            color: white;
+        }
+
+        /* Надійна таблична структура */
+        .blank-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 4px;
+            table-layout: fixed; /* Гарантує стабільність колонок */
+        }
+
+        .blank-table th, .blank-table td {
+            padding: 0;
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        .row-label {
+            width: 20px;
+            font-weight: bold;
+            color: #9ca3af;
+            font-size: 0.8rem;
+        }
+
+        .col-label {
+            font-weight: bold;
+            color: #2563eb;
+            font-size: 0.9rem;
+            padding-bottom: 8px !important;
+        }
+
+        .text-justify {
+            text-align: justify;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen py-4 px-2 sm:p-6 font-sans">
+    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+        
+        <div class="p-4 md:p-8">
+            <!-- Блок умови (тепер Задача 80.1) -->
+            <div class="mb-8 bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm">
+                <div class="text-gray-800 text-lg leading-relaxed text-justify">
+                    <span class="text-blue-700 font-bold">Задача 80.1.</span> Для приготування чаю Олена наливає в електрочайник воду та вмикає його в мережу з напругою <strong>U = 230 В</strong>. Через чайник проходить струм силою <strong>I = 6,5 А</strong>. Вода закипає за час <strong>t = 5 хв</strong>.
+                </div>
+                <div class="mt-4 text-gray-500 font-bold uppercase text-[10px] tracking-widest opacity-80">
+                    Установіть відповідність між величинами (1–4) та значеннями (А–Д).
+                </div>
+            </div>
+
+            <!-- Контейнер бланка -->
+            <div class="bg-gray-50 rounded-2xl border border-gray-200 p-4 md:p-8">
+                <div class="flex flex-col lg:flex-row gap-8">
+                    
+                    <!-- Ліва частина: Списки -->
+                    <div class="flex-1 space-y-8">
+                        <div>
+                            <h3 class="font-bold text-blue-800 uppercase text-[10px] tracking-widest mb-4 border-b border-blue-100 pb-1">Фізичні величини</h3>
+                            <ul class="space-y-2 text-sm">
+                                <li class="flex items-center"><span class="bg-blue-600 text-white w-6 h-6 rounded flex items-center justify-center mr-3 shrink-0 font-bold">1</span> Час роботи чайника</li>
+                                <li class="flex items-center"><span class="bg-blue-600 text-white w-6 h-6 rounded flex items-center justify-center mr-3 shrink-0 font-bold">2</span> Електричний опір нагрівача</li>
+                                <li class="flex items-center"><span class="bg-blue-600 text-white w-6 h-6 rounded flex items-center justify-center mr-3 shrink-0 font-bold">3</span> Потужність електричного струму</li>
+                                <li class="flex items-center"><span class="bg-blue-600 text-white w-6 h-6 rounded flex items-center justify-center mr-3 shrink-0 font-bold">4</span> Робота електричного поля</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-emerald-700 uppercase text-[10px] tracking-widest mb-4 border-b border-emerald-100 pb-1">Значення (СІ)</h3>
+                            <div class="grid grid-cols-2 lg:grid-cols-1 gap-2 text-xs">
+                                <div class="bg-white p-2 rounded border border-emerald-100 font-medium shadow-sm"><strong>А.</strong> 35,4</div>
+                                <div class="bg-white p-2 rounded border border-emerald-100 font-medium shadow-sm"><strong>Б.</strong> 300</div>
+                                <div class="bg-white p-2 rounded border border-emerald-100 font-medium shadow-sm"><strong>В.</strong> 1495</div>
+                                <div class="bg-white p-2 rounded border border-emerald-100 font-medium shadow-sm"><strong>Г.</strong> 448500</div>
+                                <div class="bg-white p-2 rounded border border-emerald-100 font-medium shadow-sm"><strong>Д.</strong> 1950</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Права частина: Таблиця (БЛАНК) -->
+                    <div class="flex-1 flex flex-col items-center justify-center">
+                        <div class="bg-white p-5 rounded-xl shadow-md border border-gray-200 w-full max-w-[340px]">
+                            <h3 class="text-center font-bold text-gray-400 mb-4 uppercase text-[9px] tracking-[0.2em]">Бланк відповідей</h3>
+                            
+                            <table class="blank-table">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th class="col-label">А</th>
+                                        <th class="col-label">Б</th>
+                                        <th class="col-label">В</th>
+                                        <th class="col-label">Г</th>
+                                        <th class="col-label">Д</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="row-label">1</td>
+                                        <td><div class="grid-cell" data-row="1" data-col="A"></div></td>
+                                        <td><div class="grid-cell" data-row="1" data-col="B"></div></td>
+                                        <td><div class="grid-cell" data-row="1" data-col="V"></div></td>
+                                        <td><div class="grid-cell" data-row="1" data-col="G"></div></td>
+                                        <td><div class="grid-cell" data-row="1" data-col="D"></div></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="row-label">2</td>
+                                        <td><div class="grid-cell" data-row="2" data-col="A"></div></td>
+                                        <td><div class="grid-cell" data-row="2" data-col="B"></div></td>
+                                        <td><div class="grid-cell" data-row="2" data-col="V"></div></td>
+                                        <td><div class="grid-cell" data-row="2" data-col="G"></div></td>
+                                        <td><div class="grid-cell" data-row="2" data-col="D"></div></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="row-label">3</td>
+                                        <td><div class="grid-cell" data-row="3" data-col="A"></div></td>
+                                        <td><div class="grid-cell" data-row="3" data-col="B"></div></td>
+                                        <td><div class="grid-cell" data-row="3" data-col="V"></div></td>
+                                        <td><div class="grid-cell" data-row="3" data-col="G"></div></td>
+                                        <td><div class="grid-cell" data-row="3" data-col="D"></div></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="row-label">4</td>
+                                        <td><div class="grid-cell" data-row="4" data-col="A"></div></td>
+                                        <td><div class="grid-cell" data-row="4" data-col="B"></div></td>
+                                        <td><div class="grid-cell" data-row="4" data-col="V"></div></td>
+                                        <td><div class="grid-cell" data-row="4" data-col="G"></div></td>
+                                        <td><div class="grid-cell" data-row="4" data-col="D"></div></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="mt-6 space-y-2">
+                                <button id="checkBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow uppercase text-xs tracking-wider transition-all active:scale-95">
+                                    Перевірити результат
+                                </button>
+                                <button id="resetBtn" class="w-full text-gray-400 py-1 text-[9px] uppercase font-bold tracking-widest hover:text-blue-500 transition-colors">
+                                    Очистити
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="resultMessage" class="hidden mt-4 w-full p-3 rounded-lg text-center font-bold text-sm border"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-100 p-3 border-t text-center text-[9px] text-gray-400 uppercase tracking-widest">
+            Інтерактивний навчальний контент
+        </div>
+    </div>
+
+    <script>
+        const cells = document.querySelectorAll('.grid-cell');
+        const checkBtn = document.getElementById('checkBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultMessage = document.getElementById('resultMessage');
+
+        // Правильні відповіді: 1-Б (300с), 2-А (35.4 Ом), 3-В (1495 Вт), 4-Г (448500 Дж)
+        const correctAnswers = { '1': 'B', '2': 'A', '3': 'V', '4': 'G' };
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => {
+                const row = cell.getAttribute('data-row');
+                document.querySelectorAll(`.grid-cell[data-row="${row}"]`).forEach(c => {
+                    c.classList.remove('selected', 'correct', 'wrong');
+                    c.textContent = '';
+                });
+                cell.classList.add('selected');
+                cell.textContent = '✕';
+                resultMessage.classList.add('hidden');
+            });
+        });
+
+        checkBtn.addEventListener('click', () => {
+            let correctCount = 0;
+            let answeredCount = 0;
+            const rows = ['1', '2', '3', '4'];
+            
+            rows.forEach(row => {
+                const selectedCell = document.querySelector(`.grid-cell[data-row="${row}"].selected`);
+                if (selectedCell) {
+                    answeredCount++;
+                    const col = selectedCell.getAttribute('data-col');
+                    selectedCell.classList.remove('selected');
+                    if (col === correctAnswers[row]) {
+                        selectedCell.classList.add('correct');
+                        correctCount++;
+                    } else {
+                        selectedCell.classList.add('wrong');
+                    }
+                }
+            });
+
+            if (answeredCount < 4) {
+                resultMessage.className = 'mt-4 w-full p-3 rounded-lg text-center font-medium bg-orange-50 text-orange-700 border-orange-200 block text-xs';
+                resultMessage.textContent = 'Будь ласка, оберіть варіанти для всіх рядків.';
+                return;
+            }
+
+            resultMessage.classList.remove('hidden');
+            if (correctCount === 4) {
+                resultMessage.className = 'mt-4 w-full p-3 rounded-lg text-center font-bold bg-green-50 text-green-700 border-green-200 block';
+                resultMessage.textContent = '🎉 ВІДМІННО! ВСЕ ПРАВИЛЬНО!';
+            } else {
+                resultMessage.className = 'mt-4 w-full p-3 rounded-lg text-center font-bold bg-red-50 text-red-700 border-red-200 block text-xs';
+                resultMessage.textContent = `Правильно: ${correctCount} з 4. Перегляньте помилки (червоним).`;
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            cells.forEach(cell => {
+                cell.classList.remove('selected', 'correct', 'wrong');
+                cell.textContent = '';
+            });
+            resultMessage.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
