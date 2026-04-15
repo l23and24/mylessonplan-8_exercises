@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Смарт-тренажер: Закон Ома</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .correct { border: 4px solid #10b981 !important; background-color: #ecfdf5; }
+        .incorrect { border: 4px solid #ef4444 !important; background-color: #fef2f2; }
+        .math { font-style: normal; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: bold; }
+        /* Оптимізація для смарт-дошки */
+        body { font-size: 1.1rem; font-family: 'Segoe UI', sans-serif; }
+        input[type="number"] { font-size: 1.5rem !important; font-style: normal !important; }
+        button { touch-action: manipulation; font-style: normal !important; }
+        p, span, label, div, h1, h2, h3 { font-style: normal !important; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8">
+
+<div class="max-w-7xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border-4 border-slate-200">
+    <!-- Умова задачі -->
+    <div class="bg-slate-50 p-8 border-b-4 border-slate-100">
+        <h2 class="text-blue-700 text-xl font-black uppercase mb-3 tracking-wider">Умова задачі:</h2>
+        <p class="text-2xl font-bold text-slate-800 leading-snug">
+            Користуючись графіком залежності сили струму (I) від напруги (U) для провідника, визначте опір провідника та напругу при силі струму 6 А. Побудуйте на цьому самому рисунку графік для іншого провідника, сила струму якого при напрузі 0,8 В дорівнює 3 А.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-0">
+        <!-- Chart Section (Left) -->
+        <div class="xl:col-span-3 p-8 border-r-2 border-slate-100 flex flex-col justify-center">
+            <div class="bg-white p-4 rounded-2xl border-2 border-slate-200 shadow-sm">
+                <div style="height: 600px; position: relative;">
+                    <canvas id="physicsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Section (Right) -->
+        <div class="xl:col-span-2 p-8 bg-slate-50 space-y-6 flex flex-col justify-start">
+            <h3 class="text-2xl font-black text-slate-800 uppercase border-b-4 border-blue-600 pb-2 self-start tracking-tighter">Виконання завдань:</h3>
+
+            <!-- Question 1 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-200 space-y-4">
+                <label class="block font-bold text-xl text-blue-900 leading-tight">1. Визначте опір провідника (R):</label>
+                <div class="flex flex-col gap-3">
+                    <div class="relative">
+                        <input type="number" id="ans1" step="0.1" placeholder="0.0" class="w-full p-4 border-2 border-slate-300 rounded-xl outline-none focus:border-blue-500 transition-all font-bold">
+                        <span class="absolute right-4 top-4 text-2xl text-slate-400 font-bold">Ом</span>
+                    </div>
+                    <button onclick="checkAnswer('ans1', 0.4)" class="w-full py-4 bg-blue-600 text-white text-xl rounded-xl font-bold hover:bg-blue-700 transition uppercase tracking-wider">Перевірити</button>
+                </div>
+                <div id="feedback1" class="hidden text-lg font-bold p-3 rounded-lg text-center"></div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-200 space-y-4">
+                <label class="block font-bold text-xl text-blue-900 leading-tight">2. Яка напруга (U) при I = 6 А?</label>
+                <div class="flex flex-col gap-3">
+                    <div class="relative">
+                        <input type="number" id="ans2" step="0.1" placeholder="0.0" class="w-full p-4 border-2 border-slate-300 rounded-xl outline-none focus:border-blue-500 transition-all font-bold">
+                        <span class="absolute right-4 top-4 text-2xl text-slate-400 font-bold">В</span>
+                    </div>
+                    <button onclick="checkAnswer('ans2', 2.4)" class="w-full py-4 bg-blue-600 text-white text-xl rounded-xl font-bold hover:bg-blue-700 transition uppercase tracking-wider">Перевірити</button>
+                </div>
+                <div id="feedback2" class="hidden text-lg font-bold p-3 rounded-lg text-center"></div>
+            </div>
+
+            <!-- Question 3 (Побудова графіка перенесена сюди) -->
+            <div class="bg-blue-50 p-6 rounded-2xl border-2 border-blue-200 space-y-4">
+                <label class="block font-bold text-xl text-blue-900 leading-tight">3. Побудова графіка (Пункт В):</label>
+                <div class="space-y-3 text-blue-900">
+                    <div class="flex items-start">
+                        <span class="bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center mr-3 flex-shrink-0 font-bold text-sm">1</span>
+                        <p class="font-bold text-base text-blue-800">Точка (0; 0)</p>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center mr-3 flex-shrink-0 font-bold text-sm">2</span>
+                        <p class="font-bold text-base text-blue-800">Точка (0,8 В; 3 А)</p>
+                    </div>
+                </div>
+                <button id="addSecondGraph" class="w-full py-5 bg-indigo-600 text-white text-xl rounded-2xl font-bold hover:bg-indigo-700 shadow-lg active:scale-95 transition-all uppercase tracking-wide">
+                    Виконати побудову
+                </button>
+            </div>
+
+            <!-- Final Success Message -->
+            <div id="finalSuccess" class="hidden p-8 bg-green-500 text-white rounded-2xl text-center shadow-xl animate-bounce">
+                <h3 class="text-3xl font-black mb-2 uppercase">Вітаємо!</h3>
+                <p class="text-xl font-bold text-white">Завдання виконано повністю!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let chart;
+    const ctx = document.getElementById('physicsChart').getContext('2d');
+
+    Chart.defaults.font.size = 18;
+    Chart.defaults.font.family = "'Segoe UI', sans-serif";
+    Chart.defaults.font.style = 'normal';
+    Chart.defaults.color = '#1e293b';
+
+    const data = {
+        datasets: [{
+            label: 'Провідник 1',
+            data: [
+                {x: 0, y: 0},
+                {x: 0.8, y: 2},
+                {x: 1.6, y: 4},
+                {x: 2.4, y: 6},
+                {x: 3.2, y: 8},
+                {x: 3.6, y: 9}
+            ],
+            borderColor: '#1d4ed8',
+            backgroundColor: 'rgba(29, 78, 216, 0.2)',
+            borderWidth: 6,
+            pointRadius: 10,
+            pointHoverRadius: 15,
+            pointBackgroundColor: '#1d4ed8',
+            showLine: true,
+            tension: 0
+        }]
+    };
+
+    const config = {
+        type: 'scatter',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    title: { 
+                        display: true, 
+                        text: 'Напруга U, В', 
+                        font: { size: 24, weight: 'bold' } 
+                    },
+                    min: 0,
+                    max: 4,
+                    grid: { color: '#cbd5e1', lineWidth: 2 },
+                    ticks: { stepSize: 0.4, font: { size: 20, weight: 'bold' } }
+                },
+                y: {
+                    title: { 
+                        display: true, 
+                        text: 'Сила струму I, А', 
+                        font: { size: 24, weight: 'bold' } 
+                    },
+                    min: 0,
+                    max: 10,
+                    grid: { color: '#cbd5e1', lineWidth: 2 },
+                    ticks: { stepSize: 1, font: { size: 20, weight: 'bold' } }
+                }
+            },
+            plugins: {
+                legend: { 
+                    display: true,
+                    labels: { font: { size: 22, weight: 'bold' } }
+                },
+                tooltip: {
+                    enabled: true,
+                    titleFont: { size: 24, weight: 'bold' },
+                    bodyFont: { size: 22, weight: 'bold' },
+                    padding: 15
+                }
+            }
+        }
+    };
+
+    window.onload = function() {
+        chart = new Chart(ctx, config);
+    };
+
+    function checkAnswer(id, correctVal) {
+        const input = document.getElementById(id);
+        const feedback = document.getElementById('feedback' + id.slice(-1));
+        const val = parseFloat(input.value);
+
+        if (isNaN(val)) return;
+
+        feedback.classList.remove('hidden');
+        if (Math.abs(val - correctVal) < 0.01) {
+            input.className = "w-full p-4 border-4 border-green-500 rounded-xl outline-none font-bold bg-green-50";
+            feedback.innerHTML = "ПРАВИЛЬНО!";
+            feedback.className = "text-xl font-bold text-green-700 mt-2 p-3 bg-green-100 rounded-lg text-center";
+            checkAllCompleted();
+        } else {
+            input.className = "w-full p-4 border-4 border-red-500 rounded-xl outline-none font-bold bg-red-50";
+            feedback.innerHTML = "СПРОБУЙТЕ ЩЕ РАЗ";
+            feedback.className = "text-xl font-bold text-red-700 mt-2 p-3 bg-red-100 rounded-lg text-center";
+        }
+    }
+
+    function checkAllCompleted() {
+        const c1 = document.getElementById('ans1').classList.contains('bg-green-50');
+        const c2 = document.getElementById('ans2').classList.contains('bg-green-50');
+        const c3 = document.getElementById('addSecondGraph').disabled;
+        if(c1 && c2 && c3) {
+            document.getElementById('finalSuccess').classList.remove('hidden');
+        }
+    }
+
+    document.getElementById('addSecondGraph').addEventListener('click', function() {
+        const newDataset = {
+            label: 'Провідник 2',
+            data: [
+                {x: 0, y: 0},
+                {x: 0.8, y: 3},
+                {x: 1.6, y: 6},
+                {x: 2.4, y: 9}
+            ],
+            borderColor: '#e11d48',
+            backgroundColor: 'rgba(225, 29, 72, 0.2)',
+            borderWidth: 6,
+            borderDash: [10, 5],
+            pointRadius: 10,
+            pointBackgroundColor: '#e11d48',
+            showLine: true,
+            tension: 0
+        };
+
+        if (chart.data.datasets.length < 2) {
+            chart.data.datasets.push(newDataset);
+            chart.update();
+            this.innerText = "ГРАФІК ПОБУДОВАНО!";
+            this.disabled = true;
+            this.className = "w-full py-5 bg-slate-400 text-white text-xl rounded-2xl font-bold cursor-not-allowed shadow-none uppercase";
+            checkAllCompleted();
+        }
+    });
+</script>
+
+</body>
+</html>
