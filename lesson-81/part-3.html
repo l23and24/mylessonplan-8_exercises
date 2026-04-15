@@ -1,1 +1,172 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест: Електричні явища</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-btn {
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        .timer-bar {
+            transition: width 1s linear;
+        }
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4 font-sans text-white">
 
+    <div id="setup-screen" class="max-w-3xl w-full text-center bg-slate-800 p-12 rounded-3xl border-4 border-blue-500 shadow-2xl">
+        <h1 class="text-5xl font-black mb-8">Електричні явища</h1>
+        <p class="text-2xl mb-10 text-slate-300">12 запитань • 15 секунд на кожне</p>
+        <button onclick="startQuiz()" class="bg-blue-600 hover:bg-blue-500 text-white text-4xl font-bold py-8 px-16 rounded-2xl shadow-lg transform active:scale-95 border-b-8 border-blue-800 transition-all uppercase">
+            Почати тест
+        </button>
+    </div>
+
+    <div id="quiz-screen" class="hidden max-w-5xl w-full bg-slate-800 p-8 sm:p-12 rounded-3xl border-4 border-slate-700 shadow-2xl relative overflow-hidden">
+        <!-- Progress bar -->
+        <div class="absolute top-0 left-0 w-full h-4 bg-slate-700">
+            <div id="timer-progress" class="timer-bar h-full bg-yellow-400 w-full"></div>
+        </div>
+
+        <div class="flex justify-between items-center mb-10 mt-4">
+            <span id="question-number" class="text-2xl font-bold text-blue-400 uppercase tracking-widest">Питання 1/12</span>
+            <span id="timer-text" class="text-4xl font-black text-yellow-400">15</span>
+        </div>
+
+        <h2 id="question-text" class="text-3xl sm:text-4xl font-bold mb-12 leading-tight">Текст запитання...</h2>
+
+        <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Options will be injected here -->
+        </div>
+    </div>
+
+    <div id="result-screen" class="hidden max-w-3xl w-full text-center bg-slate-800 p-12 rounded-3xl border-4 border-green-500 shadow-2xl">
+        <h2 class="text-5xl font-black mb-6">Результат</h2>
+        <div id="final-score" class="text-9xl font-black text-green-400 mb-10">0/12</div>
+        <button onclick="location.reload()" class="bg-slate-600 hover:bg-slate-500 text-white text-3xl font-bold py-6 px-12 rounded-2xl shadow-lg active:scale-95 transition-all">
+            Спробувати знову
+        </button>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Фізична величина, що характеризує швидкість проходження заряду?", a: ["Сила струму", "Напруга", "Опір", "Заряд"], c: 0 },
+            { q: "Одиниця вимірювання електричного опору в СІ?", a: ["Вольт", "Ампер", "Ом", "Кулон"], c: 2 },
+            { q: "Напругу збільшили у 3 рази (R=const). Як зміниться сила струму?", a: ["Зменшиться у 3 рази", "Збільшиться у 3 рази", "Не зміниться", "Збільшиться у 9 разів"], c: 1 },
+            { q: "Прилад для вимірювання електричної напруги?", a: ["Амперметр", "Омметр", "Вольтметр", "Реостат"], c: 2 },
+            { q: "Оберіть правильну формулу закону Ома для ділянки кола:", a: ["U = I / R", "I = U / R", "R = U * I", "I = U * R"], c: 1 },
+            { q: "Від чого НЕ залежить електричний опір провідника?", a: ["Від довжини", "Від матеріалу", "Від напруги", "Від площі перерізу"], c: 2 },
+            { q: "Як потрібно вмикати амперметр у коло?", a: ["Паралельно", "Послідовно", "Тільки через вольтметр", "Будь-яким способом"], c: 1 },
+            { q: "Напруга при I=0,5 А та R=10 Ом дорівнює:", a: ["5 В", "20 В", "0,05 В", "2 В"], c: 0 },
+            { q: "Площу перерізу зменшили у 2 рази. Як зміниться опір?", a: ["Зменшиться у 2 рази", "Збільшиться у 2 рази", "Збільшиться у 4 рази", "Не зміниться"], c: 1 },
+            { q: "Опір провідника при U=2 В та I=4 А дорівнює:", a: ["8 Ом", "2 Ом", "0,5 Ом", "0,25 Ом"], c: 2 },
+            { q: "Що характеризує роботу поля з переміщення одиничного заряду?", a: ["Напруга", "Потужність", "Сила струму", "Енергія"], c: 0 },
+            { q: "Пристрій зі змінним опором для регулювання сили струму?", a: ["Вимикач", "Реостат", "Запобіжник", "Конденсатор"], c: 1 }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 15;
+
+        function startQuiz() {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentIdx >= questions.length) {
+                showResult();
+                return;
+            }
+
+            const q = questions[currentIdx];
+            document.getElementById('question-number').innerText = `Питання ${currentIdx + 1}/${questions.length}`;
+            document.getElementById('question-text').innerText = q.q;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            q.a.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn bg-slate-700 hover:bg-slate-600 text-white text-2xl sm:text-3xl font-bold py-8 px-6 rounded-2xl border-b-4 border-slate-900 active:scale-95 text-left";
+                btn.innerText = opt;
+                btn.onclick = () => handleAnswer(index);
+                container.appendChild(btn);
+            });
+
+            resetTimer();
+        }
+
+        function resetTimer() {
+            clearInterval(timer);
+            timeLeft = 15;
+            updateTimerUI();
+            
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimerUI();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    handleAnswer(-1); // Timeout
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            document.getElementById('timer-text').innerText = timeLeft;
+            const percentage = (timeLeft / 15) * 100;
+            document.getElementById('timer-progress').style.width = percentage + '%';
+            
+            if (timeLeft <= 5) {
+                document.getElementById('timer-progress').classList.replace('bg-yellow-400', 'bg-red-500');
+            } else {
+                document.getElementById('timer-progress').classList.add('bg-yellow-400');
+                document.getElementById('timer-progress').classList.remove('bg-red-500');
+            }
+        }
+
+        function handleAnswer(selectedIdx) {
+            clearInterval(timer);
+            const correctIdx = questions[currentIdx].c;
+            const buttons = document.querySelectorAll('.option-btn');
+
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (idx === correctIdx) {
+                    btn.classList.replace('bg-slate-700', 'bg-green-600');
+                    btn.classList.add('border-green-900');
+                } else if (idx === selectedIdx) {
+                    btn.classList.replace('bg-slate-700', 'bg-red-600');
+                    btn.classList.add('border-red-900');
+                }
+            });
+
+            if (selectedIdx === correctIdx) score++;
+
+            setTimeout(() => {
+                currentIdx++;
+                showQuestion();
+            }, 1500);
+        }
+
+        function showResult() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `${score}/${questions.length}`;
+            
+            if (score >= 10) document.getElementById('final-score').className += " text-green-400";
+            else if (score >= 6) document.getElementById('final-score').className += " text-yellow-400";
+            else document.getElementById('final-score').className += " text-red-500";
+        }
+    </script>
+</body>
+</html>
