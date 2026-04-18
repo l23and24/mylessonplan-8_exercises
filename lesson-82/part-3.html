@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дослідження опору провідника (SmartBoard Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; 
+        }
+        .main-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+        .wire-container {
+            background: #cbd5e1;
+            border: 2px solid #64748b;
+            border-radius: 8px;
+            position: relative;
+            height: 40px;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .wire {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            height: 12px;
+            background: linear-gradient(180deg, #b45309 0%, #fbbf24 50%, #92400e 100%);
+            transform: translateY(-50%);
+            border-radius: 6px;
+        }
+        .slider-handle {
+            position: absolute;
+            top: -15px;
+            height: 70px;
+            width: 24px;
+            background: #1e293b;
+            cursor: pointer;
+            border-radius: 6px;
+            z-index: 10;
+            border: 3px solid #000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .gauge-container {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 4px solid #0f172a;
+            position: relative;
+            width: 100%;
+            max-width: 240px;
+            aspect-ratio: 1.4 / 1;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .needle {
+            transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 36px;
+            width: 36px;
+            border-radius: 50%;
+            background: #1e293b;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -12px;
+            border: 4px solid #fbbf24;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900">
+    <div class="main-container">
+        <!-- Заголовок -->
+        <header class="flex justify-between items-center mb-2 px-4 border-b pb-2">
+            <div>
+                <h1 class="text-xl font-black uppercase text-slate-800 leading-none">Віртуальна Лабораторія</h1>
+                <p class="text-[10px] font-bold text-slate-500 uppercase">Дослідження: \( R = \rho \frac{l}{S} \)</p>
+            </div>
+            <div class="flex gap-4">
+                <div class="bg-white px-4 py-1 rounded-full border border-slate-300 text-xs font-bold">
+                    Джерело: <span class="text-blue-600">6.0 В</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Основна робоча область -->
+        <div class="flex-grow grid grid-cols-12 gap-4 min-h-0">
+            
+            <!-- Колонка Приладів -->
+            <div class="col-span-3 flex flex-col gap-3 h-full">
+                <div class="bg-slate-200 p-3 rounded-2xl flex-1 flex flex-col justify-around shadow-inner border border-slate-300">
+                    <!-- Вольтметр -->
+                    <div class="text-center">
+                        <div class="gauge-container">
+                            <svg viewBox="0 0 200 140" width="100%" height="100%">
+                                <path d="M 40 110 A 60 60 0 0 1 160 110" fill="none" stroke="#1e293b" stroke-width="2" />
+                                <g id="vTicksLayer"></g>
+                                <text x="100" y="85" text-anchor="middle" font-size="24" font-weight="900" font-family="serif" fill="#1e293b">V</text>
+                                <!-- Стрілка обертається навколо (100, 110) -->
+                                <line id="vNeedle" x1="100" y1="110" x2="100" y2="35" stroke="#dc2626" stroke-width="3" class="needle" style="transform-origin: 100px 110px;" />
+                                <circle cx="100" cy="110" r="6" fill="#000" />
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-black uppercase text-slate-600 tracking-tighter">Вольтметр (0-6В)</span>
+                    </div>
+
+                    <!-- Амперметр -->
+                    <div class="text-center">
+                        <div class="gauge-container">
+                            <svg viewBox="0 0 200 140" width="100%" height="100%">
+                                <path d="M 40 110 A 60 60 0 0 1 160 110" fill="none" stroke="#1e293b" stroke-width="2" />
+                                <g id="aTicksLayer"></g>
+                                <text x="100" y="85" text-anchor="middle" font-size="24" font-weight="900" font-family="serif" fill="#1e293b">A</text>
+                                <line id="aNeedle" x1="100" y1="110" x2="100" y2="35" stroke="#dc2626" stroke-width="3" class="needle" style="transform-origin: 100px 110px;" />
+                                <circle cx="100" cy="110" r="6" fill="#000" />
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-black uppercase text-slate-600 tracking-tighter">Амперметр (0-6А)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Центральна колонка -->
+            <div class="col-span-5 flex flex-col gap-4 h-full">
+                <!-- Установка -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="wire-container mb-8 mt-4">
+                        <div id="visualWire" class="wire"></div>
+                        <div id="visualSlider" class="slider-handle"></div>
+                        <div class="absolute left-2 -bottom-6 text-[10px] font-bold text-slate-400 italic">0</div>
+                        <div class="absolute right-2 -bottom-6 text-[10px] font-bold text-slate-400 italic">10 м</div>
+                    </div>
+
+                    <div class="flex items-center gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <div class="flex-grow">
+                            <input type="range" id="lengthInput" min="1" max="10" step="1" value="2" class="w-full h-3 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div class="text-center bg-slate-800 text-white px-6 py-2 rounded-xl min-w-[120px]">
+                            <div class="text-[10px] uppercase font-bold text-slate-400 mb-1 leading-none">Довжина</div>
+                            <div class="text-3xl font-black text-amber-400 leading-none"><span id="lengthVal">2</span>м</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Таблиця даних -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex-grow overflow-hidden flex flex-col">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-xs font-black uppercase text-slate-500 tracking-widest">Таблиця спостережень</h3>
+                        <button id="recordBtn" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md active:scale-95 transition-all">ЗАПИСАТИ</button>
+                    </div>
+                    <div class="flex-grow overflow-y-auto border border-slate-100 rounded-xl">
+                        <table class="w-full text-sm text-center">
+                            <thead class="bg-slate-50 sticky top-0">
+                                <tr>
+                                    <th class="p-3 border-b text-slate-400 font-bold">\( l \), м</th>
+                                    <th class="p-3 border-b text-slate-400 font-bold">\( I \), А</th>
+                                    <th class="p-3 border-b text-slate-400 font-bold text-blue-600">\( R \), Ом</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTable" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Права колонка -->
+            <div class="col-span-4 flex flex-col gap-4 h-full">
+                <!-- Графік -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex-[3] min-h-0">
+                    <canvas id="resitanceChart"></canvas>
+                </div>
+
+                <!-- Висновок -->
+                <div class="bg-slate-900 p-5 rounded-2xl text-white shadow-xl flex-[2] flex flex-col">
+                    <div class="mb-2">
+                        <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Висновок</p>
+                        <p class="text-xs font-medium text-slate-300 italic">Як опір залежить від довжини?</p>
+                    </div>
+                    <div class="flex-grow flex flex-col justify-end">
+                        <textarea id="conclusion" rows="2" class="w-full bg-slate-800 border-none rounded-xl p-3 text-sm mb-3 focus:ring-2 focus:ring-amber-500 outline-none resize-none" placeholder="Введіть висновок..."></textarea>
+                        <button id="checkBtn" class="w-full bg-amber-500 text-slate-900 font-black py-3 rounded-xl text-sm hover:bg-amber-400 transition-colors uppercase">ПЕРЕВІРИТИ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Повідомлення -->
+        <div id="feedback" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-6 rounded-2xl shadow-2xl border-4 z-50 max-w-sm text-center"></div>
+    </div>
+
+    <script>
+        const k = 1.2; 
+        const U = 6.0; 
+        let measurements = [];
+        let chart;
+
+        // Налаштування SVG приладів
+        const cx = 100, cy = 110, r = 60;
+
+        function createGaugeTicks(layerId, maxVal) {
+            const layer = document.getElementById(layerId);
+            for (let v = 0; v <= maxVal; v += 0.5) {
+                const angleDeg = (v / maxVal) * 100 - 50; // -50 до +50 градусів
+                const rad = (angleDeg - 90) * (Math.PI / 180);
+                
+                const isMajor = v % 1 === 0;
+                const len = isMajor ? 12 : 6;
+                
+                const x1 = cx + r * Math.cos(rad);
+                const y1 = cy + r * Math.sin(rad);
+                const x2 = cx + (r - len) * Math.cos(rad);
+                const y2 = cy + (r - len) * Math.sin(rad);
+
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", x1); line.setAttribute("y1", y1);
+                line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+                line.setAttribute("stroke", "#1e293b");
+                line.setAttribute("stroke-width", isMajor ? "2" : "1");
+                layer.appendChild(line);
+
+                if (isMajor) {
+                    const tx = cx + (r + 15) * Math.cos(rad);
+                    const ty = cy + (r + 15) * Math.sin(rad);
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", tx); text.setAttribute("y", ty);
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("dominant-baseline", "middle");
+                    text.setAttribute("font-size", "10");
+                    text.setAttribute("font-weight", "bold");
+                    text.textContent = v;
+                    layer.appendChild(text);
+                }
+            }
+        }
+
+        function updateSimulation() {
+            const L = parseFloat(document.getElementById('lengthInput').value);
+            document.getElementById('lengthVal').innerText = L;
+            
+            const R = k * L;
+            const I = U / R;
+            
+            // Кути (шкала 0-6А/В)
+            const vAngle = (U / 6) * 100 - 50;
+            const aAngle = (I / 6) * 100 - 50;
+            
+            document.getElementById('vNeedle').style.transform = `rotate(${vAngle}deg)`;
+            document.getElementById('aNeedle').style.transform = `rotate(${aAngle}deg)`;
+            
+            const w = L * 9; 
+            document.getElementById('visualWire').style.width = w + '%';
+            document.getElementById('visualSlider').style.left = `calc(${w}% + 10px)`;
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('resitanceChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'R(l)',
+                        data: [],
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 5,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#1e293b',
+                        fill: true,
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Довжина l, м' } },
+                        y: { title: { display: true, text: 'Опір R, Ом' }, beginAtZero: true, max: 15 }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        document.getElementById('recordBtn').addEventListener('click', () => {
+            const L = parseFloat(document.getElementById('lengthInput').value);
+            const R = parseFloat((k * L).toFixed(1));
+            const I = parseFloat((U / R).toFixed(2));
+            
+            if (!measurements.find(m => m.l === L)) {
+                measurements.push({ l: L, r: R, i: I });
+                measurements.sort((a, b) => a.l - b.l);
+                const table = document.getElementById('dataTable');
+                table.innerHTML = measurements.map(m => `
+                    <tr>
+                        <td class="p-3 font-black">${m.l}</td>
+                        <td class="p-3 text-slate-500 font-bold">${m.i}</td>
+                        <td class="p-3 text-blue-600 font-black">${m.r}</td>
+                    </tr>`).join('');
+                chart.data.labels = measurements.map(m => m.l);
+                chart.data.datasets[0].data = measurements.map(m => m.r);
+                chart.update();
+            }
+        });
+
+        document.getElementById('checkBtn').addEventListener('click', () => {
+            const text = document.getElementById('conclusion').value.toLowerCase();
+            const feedback = document.getElementById('feedback');
+            feedback.classList.remove('hidden');
+            if (text.includes('прямо') && text.includes('пропорці')) {
+                feedback.innerHTML = "<h2 class='text-2xl font-black mb-2'>ВІРНО! 🌟</h2><p>Опір провідника прямо пропорційний його довжині.</p>";
+                feedback.className = "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-8 rounded-3xl shadow-2xl border-4 z-50 max-w-sm text-center bg-emerald-500 text-white border-white animate-bounce";
+            } else {
+                feedback.innerHTML = "<h2 class='text-2xl font-black mb-2'>Спробуйте ще! 💡</h2><p>Опір зростає так само як і довжина.</p>";
+                feedback.className = "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-8 rounded-3xl shadow-2xl border-4 z-50 max-w-sm text-center bg-amber-500 text-white border-white";
+            }
+            setTimeout(() => feedback.classList.add('hidden'), 3500);
+        });
+
+        window.onload = () => {
+            createGaugeTicks('vTicksLayer', 6);
+            createGaugeTicks('aTicksLayer', 6);
+            updateSimulation();
+            initChart();
+            document.getElementById('lengthInput').addEventListener('input', updateSimulation);
+        };
+    </script>
+</body>
+</html>
