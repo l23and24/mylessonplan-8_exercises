@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажер 82.1: Взаємозвязок параметрів опору</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .formula-card {
+            background: #ffffff;
+            border: 3px solid #e2e8f0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .step-active {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.04);
+        }
+
+        /* Естетика фізичних величин */
+        .phys-var {
+            font-family: "Times New Roman", Times, serif;
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        /* Стиль для селектів на смарт-дошці */
+        .select-box {
+            appearance: none;
+            background-color: #f8fafc;
+            border: 3px solid #3b82f6;
+            border-radius: 16px;
+            width: 90px;
+            height: 65px;
+            text-align: center;
+            font-size: 1.75rem;
+            color: #1e40af;
+            cursor: pointer;
+            text-align-last: center;
+            font-family: "Times New Roman", Times, serif;
+            font-style: italic;
+            transition: all 0.2s;
+        }
+
+        .select-box:active {
+            transform: scale(0.95);
+            background-color: #dbeafe;
+        }
+
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            vertical-align: middle;
+            text-align: center;
+            margin: 0 12px;
+        }
+
+        .fraction-top { border-bottom: 3px solid #334155; padding: 4px; }
+        .fraction-bottom { padding: 4px; }
+
+        .success-glow {
+            animation: glow 1.5s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px #10b981; }
+            to { box-shadow: 0 0 20px #10b981; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-5xl w-full bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-12">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-black text-slate-800 uppercase tracking-tight">Тренажер 82.1</h1>
+            <p class="text-slate-500 mt-2 text-lg italic">Взаємозвязок параметрів опору</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            
+            <!-- Ліва колонка: Логічний ланцюжок -->
+            <div class="space-y-8">
+                <div id="step1" class="formula-card p-10 rounded-[2rem] step-active">
+                    <h2 class="text-blue-600 font-bold uppercase tracking-widest text-sm mb-6">Базова формула</h2>
+                    <div class="text-6xl text-center">
+                        <span class="phys-var">R</span> = <span class="phys-var">ρ</span> · <div class="fraction">
+                            <span class="fraction-top"><span class="phys-var">l</span></span>
+                            <span class="fraction-bottom"><span class="phys-var">S</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step2" class="formula-card p-10 rounded-[2rem] opacity-30 shadow-sm transition-all duration-1000">
+                    <h2 class="text-blue-600 font-bold uppercase tracking-widest text-sm mb-6">Допоміжний вигляд</h2>
+                    <p class="text-slate-500 mb-6 text-center text-lg">Позбуваємось знаменника:</p>
+                    <div class="text-6xl text-center">
+                        <span class="phys-var">R</span> · <span class="phys-var">S</span> = <span class="phys-var">ρ</span> · <span class="phys-var">l</span>
+                    </div>
+                    <div class="flex justify-center mt-8">
+                        <button onclick="activateStep3()" id="btn-next" class="bg-blue-600 text-white text-xl font-bold px-12 py-5 rounded-2xl hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200">
+                            Я все зрозумів! Почати вправу
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Права колонка: Інтерактивні завдання -->
+            <div id="step3" class="formula-card p-10 rounded-[2.5rem] opacity-20 pointer-events-none transition-all duration-700">
+                <h2 class="text-blue-600 font-bold uppercase tracking-widest text-sm mb-10 text-center">Виведіть похідні формули</h2>
+                
+                <div class="space-y-12">
+                    <!-- Питомий опір -->
+                    <div class="flex items-center justify-between group">
+                        <div class="text-5xl phys-var">ρ = </div>
+                        <div class="fraction">
+                            <select id="rho-top" class="select-box">
+                                <option value="" class="not-italic">?</option>
+                                <option value="R·S">R·S</option>
+                                <option value="l">l</option>
+                                <option value="S">S</option>
+                                <option value="ρ·l">ρ·l</option>
+                            </select>
+                            <div class="fraction-bottom">
+                                <select id="rho-bottom" class="select-box">
+                                    <option value="" class="not-italic">?</option>
+                                    <option value="l">l</option>
+                                    <option value="S">S</option>
+                                    <option value="R">R</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="check('rho')" class="bg-emerald-500 text-white w-16 h-16 rounded-2xl font-bold text-xl hover:bg-emerald-600 shadow-lg active:scale-90 transition">OK</button>
+                    </div>
+
+                    <!-- Довжина -->
+                    <div class="flex items-center justify-between group">
+                        <div class="text-5xl phys-var">l = </div>
+                        <div class="fraction">
+                            <select id="l-top" class="select-box">
+                                <option value="" class="not-italic">?</option>
+                                <option value="R·S">R·S</option>
+                                <option value="R">R</option>
+                                <option value="ρ">ρ</option>
+                                <option value="S">S</option>
+                            </select>
+                            <div class="fraction-bottom">
+                                <select id="l-bottom" class="select-box">
+                                    <option value="" class="not-italic">?</option>
+                                    <option value="ρ">ρ</option>
+                                    <option value="R">R</option>
+                                    <option value="S">S</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="check('l')" class="bg-emerald-500 text-white w-16 h-16 rounded-2xl font-bold text-xl hover:bg-emerald-600 shadow-lg active:scale-90 transition">OK</button>
+                    </div>
+
+                    <!-- Площа -->
+                    <div class="flex items-center justify-between group">
+                        <div class="text-5xl phys-var">S = </div>
+                        <div class="fraction">
+                            <select id="s-top" class="select-box">
+                                <option value="" class="not-italic">?</option>
+                                <option value="ρ·l">ρ·l</option>
+                                <option value="R·S">R·S</option>
+                                <option value="R">R</option>
+                                <option value="l">l</option>
+                            </select>
+                            <div class="fraction-bottom">
+                                <select id="s-bottom" class="select-box">
+                                    <option value="" class="not-italic">?</option>
+                                    <option value="R">R</option>
+                                    <option value="ρ">ρ</option>
+                                    <option value="l">l</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="check('s')" class="bg-emerald-500 text-white w-16 h-16 rounded-2xl font-bold text-xl hover:bg-emerald-600 shadow-lg active:scale-90 transition">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Покращене модальне вікно -->
+        <div id="modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-[3rem] p-12 max-w-sm w-full text-center shadow-2xl transform transition-all scale-90">
+                <div id="modal-icon" class="text-7xl mb-6"></div>
+                <div id="modal-text" class="text-3xl font-black mb-8 leading-tight"></div>
+                <button onclick="closeModal()" class="bg-slate-800 text-white w-full py-5 rounded-2xl font-bold text-xl active:scale-95 transition-all shadow-xl">Продовжити</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Етапна поява матеріалу
+        window.onload = () => {
+            setTimeout(() => {
+                const s2 = document.getElementById('step2');
+                s2.classList.remove('opacity-30');
+                s2.classList.add('step-active');
+                document.getElementById('step1').classList.replace('step-active', 'opacity-30');
+            }, 2000);
+        };
+
+        function activateStep3() {
+            const s2 = document.getElementById('step2');
+            const s3 = document.getElementById('step3');
+            
+            s2.classList.remove('step-active');
+            s2.classList.add('opacity-30');
+            
+            s3.classList.remove('opacity-20', 'pointer-events-none');
+            s3.classList.add('step-active');
+            document.getElementById('btn-next').parentElement.innerHTML = '<p class="text-emerald-600 font-bold text-lg">💡 Використовуй підказку вище!</p>';
+        }
+
+        function check(type) {
+            const top = document.getElementById(`${type}-top`).value;
+            const bottom = document.getElementById(`${type}-bottom`).value;
+            
+            let isCorrect = false;
+            if (type === 'rho' && top === 'R·S' && bottom === 'l') isCorrect = true;
+            if (type === 'l' && top === 'R·S' && bottom === 'ρ') isCorrect = true;
+            if (type === 's' && top === 'ρ·l' && bottom === 'R') isCorrect = true;
+
+            showResult(isCorrect);
+        }
+
+        function showResult(correct) {
+            const modal = document.getElementById('modal');
+            const icon = document.getElementById('modal-icon');
+            const text = document.getElementById('modal-text');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            if (correct) {
+                icon.innerText = "⭐";
+                text.innerText = "Чудово!\nЦе правильна формула";
+                text.style.color = "#10b981";
+            } else {
+                icon.innerText = "🔍";
+                text.innerText = "Поглянь на\nКрок 2 ще раз";
+                text.style.color = "#f59e0b";
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.getElementById('modal').classList.remove('flex');
+        }
+    </script>
+</body>
+</html>
