@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фізика: Розрахунок опору (Динамічний)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .phys-font { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        
+        input { 
+            border: 3px solid #94a3b8; 
+            border-radius: 16px; 
+            width: 110px; 
+            text-align: center; 
+            padding: 10px;
+            font-weight: bold;
+            font-size: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: white;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+            transform: scale(1.05);
+        }
+
+        .correct { 
+            background-color: #dcfce7 !important; 
+            border-color: #22c55e !important; 
+            color: #166534 !important; 
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+        }
+        
+        .wrong { 
+            background-color: #fee2e2 !important; 
+            border-color: #ef4444 !important; 
+            color: #991b1b !important;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .refresh-btn {
+            transition: all 0.3s;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+
+        .hint-popup {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 2px solid #3b82f6;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            z-index: 50;
+            font-size: 1.25rem;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body class="bg-slate-200 min-h-screen p-4 md:p-8 font-sans flex items-center justify-center">
+
+    <div class="max-w-5xl w-full bg-white shadow-2xl rounded-[3rem] p-8 md:p-14 border-b-[12px] border-emerald-500">
+        
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-black text-slate-800 uppercase tracking-tighter">Тренажер 82.2 — Розрахунки</h1>
+        </header>
+
+        <div class="overflow-x-auto">
+            <table class="w-full border-separate border-spacing-y-4">
+                <thead>
+                    <tr class="text-slate-500 phys-font text-2xl">
+                        <th class="p-4 text-center">ρ, <span class="not-italic text-sm">Ом·мм²/м</span></th>
+                        <th class="p-4 text-center">l, <span class="not-italic text-sm">м</span></th>
+                        <th class="p-4 text-center">S, <span class="not-italic text-sm">мм²</span></th>
+                        <th class="p-4 text-center">R, <span class="not-italic text-sm">Ом</span></th>
+                    </tr>
+                </thead>
+                <tbody id="task-table">
+                    <!-- Завдання генеруються скриптом -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-14 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="bg-emerald-50 p-6 rounded-2xl border-2 border-emerald-100 flex-1">
+                <p class="text-emerald-800 text-lg font-medium">
+                    <span class="text-2xl">💡</span> Заповни пусту клітинку. Якщо потрібна допомога — тисни на лампочку.
+                </p>
+            </div>
+            
+            <button onclick="generateTasks()" class="refresh-btn bg-slate-800 hover:bg-slate-700 text-white px-12 py-6 rounded-2xl font-bold text-2xl flex items-center gap-3">
+                <span>🔄</span> Продовжити
+            </button>
+        </div>
+    </div>
+
+    <!-- Підказка -->
+    <div id="hint-box" class="hint-popup font-bold phys-font"></div>
+
+    <script>
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        function beep(freq, duration) {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = freq > 300 ? 'sine' : 'square';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const materials = [0.017, 0.028, 0.1, 0.4, 1.1]; 
+        const hintFormulas = [
+            "ρ = (R · S) / l",
+            "l = (R · S) / ρ",
+            "S = (ρ · l) / R",
+            "R = (ρ · l) / S"
+        ];
+
+        function showHint(event, idx) {
+            const hintBox = document.getElementById('hint-box');
+            hintBox.innerText = hintFormulas[idx];
+            hintBox.style.display = 'block';
+            hintBox.style.left = (event.pageX + 20) + 'px';
+            hintBox.style.top = (event.pageY - 20) + 'px';
+            
+            setTimeout(() => {
+                hintBox.style.display = 'none';
+            }, 3000);
+        }
+
+        function generateTasks() {
+            const tbody = document.getElementById('task-table');
+            tbody.innerHTML = '';
+            
+            for (let i = 0; i < 4; i++) {
+                const tr = document.createElement('tr');
+                tr.className = "bg-slate-50 rounded-3xl overflow-hidden relative";
+                
+                let rho = materials[Math.floor(Math.random() * materials.length)];
+                let l = Math.floor(Math.random() * 40 + 1) * 5; 
+                let s = [0.5, 1, 2, 4, 5][Math.floor(Math.random() * 5)];
+                let r = parseFloat(((rho * l) / s).toFixed(2));
+
+                const values = [rho, l, s, r];
+                const unknownIdx = i; 
+
+                values.forEach((val, idx) => {
+                    const td = document.createElement('td');
+                    td.className = "p-6 text-center";
+                    
+                    if (idx === unknownIdx) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = "flex items-center justify-center gap-2";
+                        
+                        const input = document.createElement('input');
+                        input.type = "number";
+                        input.placeholder = "?";
+                        input.dataset.answer = val; 
+                        input.onchange = function() { verify(this); };
+                        
+                        const hintBtn = document.createElement('button');
+                        hintBtn.innerHTML = "💡";
+                        hintBtn.className = "text-xl bg-blue-100 hover:bg-blue-200 p-2 rounded-full transition-colors leading-none";
+                        hintBtn.onclick = (e) => showHint(e, idx);
+                        
+                        wrapper.appendChild(input);
+                        wrapper.appendChild(hintBtn);
+                        td.appendChild(wrapper);
+                    } else {
+                        td.innerHTML = `<span class="font-bold text-3xl text-slate-700">${val}</span>`;
+                    }
+                    tr.appendChild(td);
+                });
+                
+                tbody.appendChild(tr);
+            }
+        }
+
+        function verify(el) {
+            const userVal = parseFloat(el.value);
+            const correctVal = parseFloat(el.dataset.answer);
+            
+            if (Math.abs(userVal - correctVal) < 0.011) {
+                el.className = "correct";
+                beep(800, 0.1);
+            } else {
+                el.className = "wrong";
+                beep(120, 0.4);
+                setTimeout(() => {
+                    if (el.className === "wrong") {
+                        el.classList.remove("wrong");
+                    }
+                }, 1000);
+            }
+        }
+
+        window.onload = generateTasks;
+    </script>
+</body>
+</html>
