@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Фізика: Інтерактивна вправа</title>
+    <title>Фізика: Виведення формул</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Анімований фон */
         @keyframes gradientBG {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -19,166 +18,143 @@
             animation: gradientBG 15s ease infinite;
             color: white;
             font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Заборона прокрутки */
+            overflow: hidden;
             height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* Ефект частинок на фоні */
         .particles {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
             z-index: 0;
-        }
-
-        span, div { text-decoration: none !important; }
-
-        .formula-card {
-            background: rgba(255, 255, 255, 0.95);
-            color: #1e293b;
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        /* Класичний дріб */
-        .fraction {
-            display: inline-flex;
-            flex-direction: column;
-            vertical-align: middle;
-            text-align: center;
-            line-height: 1.1;
-            margin: 0 8px;
-        }
-
-        .num {
-            border-bottom: 2px solid #1e293b !important;
-            padding-bottom: 2px;
-            display: block;
-        }
-
-        .den {
-            padding-top: 2px;
-            display: block;
         }
 
         .var {
             font-style: italic;
             font-family: 'Georgia', serif;
-            display: inline-block;
         }
 
-        /* Стан прихованого елемента */
-        .step-hidden {
-            opacity: 0;
-            transform: scale(0.8) translateY(30px);
-            pointer-events: none;
-        }
-
-        /* Стан видимого елемента */
-        .step-visible {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-            pointer-events: auto;
-        }
-
-        /* Графічні дужки */
-        .bracket-left {
-            border-right: 4px solid rgba(255,255,255,0.5);
-            border-top: 4px solid rgba(255,255,255,0.5);
-            border-bottom: 4px solid rgba(255,255,255,0.5);
-            width: 30px;
-            height: 180px;
-            border-radius: 0 16px 16px 0;
-        }
-        .bracket-right {
-            border-left: 4px solid rgba(255,255,255,0.5);
-            border-top: 4px solid rgba(255,255,255,0.5);
-            border-bottom: 4px solid rgba(255,255,255,0.5);
-            width: 30px;
-            height: 90%;
-            border-radius: 16px 0 0 16px;
-        }
-        .line-conn {
-            height: 4px;
-            background-color: rgba(255,255,255,0.5);
-            width: 50px;
-        }
-
-        .result-block {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 0.8rem 1.5rem;
+        .formula-card {
+            background: rgba(255, 255, 255, 0.95);
+            color: #1e293b;
             border-radius: 12px;
-            min-width: 180px;
+            padding: 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
-            color: white;
             transition: all 0.5s ease;
         }
 
-        .result-block .num { border-color: white !important; }
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            vertical-align: middle;
+            text-align: center;
+            line-height: 1;
+            margin: 0 6px;
+        }
+
+        .num { border-bottom: 2px solid #1e293b; padding-bottom: 1px; }
+        .den { padding-top: 1px; }
+
+        .step-hidden { opacity: 0; transform: translateY(15px); pointer-events: none; }
+        .step-visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+        .bracket-left {
+            border-right: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid rgba(255,255,255,0.3);
+            border-bottom: 3px solid rgba(255,255,255,0.3);
+            width: 20px;
+            height: 140px;
+            border-radius: 0 12px 12px 0;
+        }
+        .bracket-right {
+            border-left: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid rgba(255,255,255,0.3);
+            border-bottom: 3px solid rgba(255,255,255,0.3);
+            width: 20px;
+            height: 100%;
+            border-radius: 12px 0 0 12px;
+        }
+        .line-conn { height: 3px; background-color: rgba(255,255,255,0.3); width: 30px; }
+
+        .result-block {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            min-width: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: white;
+            transition: all 0.4s ease;
+        }
+        .result-block .num { border-color: white; }
 
         .main-equality {
             background: #2563eb;
             color: white;
+            padding: 1.5rem;
             border: 2px solid rgba(255,255,255,0.3);
         }
-        .main-equality .num { border-color: white !important; }
+        .main-equality .num { border-color: white; }
 
-        /* Навігація */
+        .hidden-answer { visibility: hidden; }
+        .visible-answer { visibility: visible; }
+
         .nav-panel {
             position: absolute;
-            bottom: 2rem;
+            bottom: 1.5rem;
             display: flex;
-            gap: 1.5rem;
+            gap: 1rem;
             z-index: 10;
         }
         .nav-btn {
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.3);
             color: white;
-            padding: 1rem 2rem;
+            padding: 0.7rem 1.5rem;
             border-radius: 50px;
             cursor: pointer;
             backdrop-filter: blur(5px);
             font-weight: bold;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
-        .nav-btn:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
-        .nav-btn.disabled { opacity: 0.3; cursor: not-allowed; }
+        .nav-btn:hover:not(.disabled) { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+        .nav-btn.disabled { opacity: 0.2; cursor: not-allowed; }
     </style>
 </head>
-<body class="relative flex flex-col items-center justify-center">
+<body class="relative">
 
     <div class="particles"></div>
 
-    <!-- Верхній індикатор -->
-    <div class="absolute top-8 text-white/50 font-mono tracking-widest uppercase text-sm">
-        Етап <span id="step-counter" class="text-white text-lg font-bold">1</span> / 8
+    <div class="absolute top-6 text-white/40 font-mono tracking-widest uppercase text-xs">
+        Крок <span id="step-counter" class="text-white text-lg font-bold">1</span> / 13
     </div>
 
-    <div class="z-10 flex items-center justify-center w-full max-w-7xl px-4 h-[75vh]">
+    <div class="z-10 flex items-center justify-center w-full max-w-6xl px-4 h-[80vh]">
         
-        <!-- Сектор 1 -->
-        <div id="step-1" class="flex flex-col space-y-12">
-            <div class="formula-card text-4xl shadow-blue-900/20">
-                <span class="var">R</span> &nbsp;=&nbsp; 
+        <!-- Початкові формули -->
+        <div id="step-1" class="flex flex-col space-y-8">
+            <div class="formula-card text-3xl">
+                <span class="var">R</span>&nbsp;=&nbsp;
                 <div class="fraction">
                     <span class="num"><span class="var">ρ</span><span class="var">l</span></span>
                     <span class="den"><span class="var">S</span></span>
                 </div>
             </div>
-            <div class="formula-card text-4xl">
-                <span class="var">R</span> &nbsp;=&nbsp; 
+            <div class="formula-card text-3xl">
+                <span class="var">R</span>&nbsp;=&nbsp;
                 <div class="fraction">
                     <span class="num"><span class="var">U</span></span>
                     <span class="den"><span class="var">I</span></span>
@@ -186,16 +162,16 @@
             </div>
         </div>
 
-        <!-- Сектор 2 -->
-        <div id="step-2" class="flex items-center step-hidden mx-2">
+        <!-- Поєднання -->
+        <div id="step-2" class="flex items-center step-hidden mx-1">
             <div class="bracket-left"></div>
             <div class="line-conn"></div>
-            <div class="formula-card main-equality text-5xl p-12 shadow-2xl">
+            <div class="formula-card main-equality text-4xl shadow-2xl">
                 <div class="fraction">
                     <span class="num"><span class="var">U</span></span>
                     <span class="den"><span class="var">I</span></span>
                 </div>
-                <span class="mx-6 text-white/80">=</span>
+                <span class="mx-4 text-white/80">=</span>
                 <div class="fraction">
                     <span class="num"><span class="var">ρ</span><span class="var">l</span></span>
                     <span class="den"><span class="var">S</span></span>
@@ -203,75 +179,107 @@
             </div>
         </div>
 
-        <!-- Сектор 3 -->
-        <div id="step-3" class="flex items-center self-stretch py-10 step-hidden mx-2">
+        <!-- Висновок -->
+        <div id="step-3" class="flex items-center self-stretch py-12 step-hidden mx-1">
             <div class="line-conn"></div>
             <div class="bracket-right"></div>
         </div>
 
-        <!-- Сектор 4: Виведення -->
-        <div class="flex flex-col space-y-3">
+        <!-- Виведені формули з кроками -->
+        <div class="flex flex-col space-y-2">
+            <!-- U -->
             <div id="step-4" class="result-block step-hidden">
-                <span class="var">U</span> &nbsp;=&nbsp;
-                <div class="fraction text-2xl">
-                    <span class="num"><span class="var">I</span> <span class="var">ρ</span> <span class="var">l</span></span>
-                    <span class="den"><span class="var">S</span></span>
-                </div>
+                <span class="var">U</span>&nbsp;=&nbsp;
+                <span id="ans-4" class="hidden-answer">
+                    <div class="fraction text-xl">
+                        <span class="num"><span class="var">I</span> <span class="var">ρ</span> <span class="var">l</span></span>
+                        <span class="den"><span class="var">S</span></span>
+                    </div>
+                </span>
             </div>
-            <div id="step-5" class="result-block step-hidden">
-                <span class="var">I</span> &nbsp;=&nbsp;
-                <div class="fraction text-2xl">
-                    <span class="num"><span class="var">U</span> <span class="var">S</span></span>
-                    <span class="den"><span class="var">ρ</span> <span class="var">l</span></span>
-                </div>
-            </div>
+            <!-- I -->
             <div id="step-6" class="result-block step-hidden">
-                <span class="var">ρ</span> &nbsp;=&nbsp;
-                <div class="fraction text-2xl">
-                    <span class="num"><span class="var">U</span> <span class="var">S</span></span>
-                    <span class="den"><span class="var">I</span> <span class="var">l</span></span>
-                </div>
+                <span class="var">I</span>&nbsp;=&nbsp;
+                <span id="ans-6" class="hidden-answer">
+                    <div class="fraction text-xl">
+                        <span class="num"><span class="var">U</span> <span class="var">S</span></span>
+                        <span class="den"><span class="var">ρ</span> <span class="var">l</span></span>
+                    </div>
+                </span>
             </div>
-            <div id="step-7" class="result-block step-hidden">
-                <span class="var">l</span> &nbsp;=&nbsp;
-                <div class="fraction text-2xl">
-                    <span class="num"><span class="var">U</span> <span class="var">S</span></span>
-                    <span class="den"><span class="var">I</span> <span class="var">ρ</span></span>
-                </div>
-            </div>
+            <!-- rho -->
             <div id="step-8" class="result-block step-hidden">
-                <span class="var">S</span> &nbsp;=&nbsp;
-                <div class="fraction text-2xl">
-                    <span class="num"><span class="var">I</span> <span class="var">ρ</span> <span class="var">l</span></span>
-                    <span class="den"><span class="var">U</span></span>
-                </div>
+                <span class="var">ρ</span>&nbsp;=&nbsp;
+                <span id="ans-8" class="hidden-answer">
+                    <div class="fraction text-xl">
+                        <span class="num"><span class="var">U</span> <span class="var">S</span></span>
+                        <span class="den"><span class="var">I</span> <span class="var">l</span></span>
+                    </div>
+                </span>
+            </div>
+            <!-- l -->
+            <div id="step-10" class="result-block step-hidden">
+                <span class="var">l</span>&nbsp;=&nbsp;
+                <span id="ans-10" class="hidden-answer">
+                    <div class="fraction text-xl">
+                        <span class="num"><span class="var">U</span> <span class="var">S</span></span>
+                        <span class="den"><span class="var">I</span> <span class="var">ρ</span></span>
+                    </div>
+                </span>
+            </div>
+            <!-- S -->
+            <div id="step-12" class="result-block step-hidden">
+                <span class="var">S</span>&nbsp;=&nbsp;
+                <span id="ans-12" class="hidden-answer">
+                    <div class="fraction text-xl">
+                        <span class="num"><span class="var">I</span> <span class="var">ρ</span> <span class="var">l</span></span>
+                        <span class="den"><span class="var">U</span></span>
+                    </div>
+                </span>
             </div>
         </div>
     </div>
 
-    <!-- Керування -->
     <div class="nav-panel">
         <button id="prev" class="nav-btn">← НАЗАД</button>
-        <button id="next" class="nav-btn bg-white !text-slate-900">ВКЛЮЧИТИ ВПЕРЕД →</button>
+        <button id="next" class="nav-btn bg-white !text-slate-900 shadow-lg">ДАЛІ →</button>
     </div>
 
     <script>
         let currentStep = 1;
-        const totalSteps = 8;
+        const totalSteps = 13;
 
         const updateUI = () => {
             document.getElementById('step-counter').innerText = currentStep;
 
-            for (let i = 2; i <= totalSteps; i++) {
-                const el = document.getElementById('step-' + i);
-                if (i <= currentStep) {
-                    el.classList.remove('step-hidden');
-                    el.classList.add('step-visible');
-                } else {
-                    el.classList.add('step-hidden');
-                    el.classList.remove('step-visible');
+            // Логіка показу великих блоків
+            [2, 3, 4, 6, 8, 10, 12].forEach(id => {
+                const el = document.getElementById('step-' + id);
+                if (el) {
+                    if (currentStep >= id) {
+                        el.classList.remove('step-hidden');
+                        el.classList.add('step-visible');
+                    } else {
+                        el.classList.add('step-hidden');
+                        el.classList.remove('step-visible');
+                    }
                 }
-            }
+            });
+
+            // Логіка показу відповідей (праві частини)
+            [5, 7, 9, 11, 13].forEach(stepId => {
+                const ansId = 'ans-' + (stepId - 1);
+                const el = document.getElementById(ansId);
+                if (el) {
+                    if (currentStep >= stepId) {
+                        el.classList.remove('hidden-answer');
+                        el.classList.add('visible-answer');
+                    } else {
+                        el.classList.add('hidden-answer');
+                        el.classList.remove('visible-answer');
+                    }
+                }
+            });
 
             document.getElementById('prev').classList.toggle('disabled', currentStep === 1);
             document.getElementById('next').classList.toggle('disabled', currentStep === totalSteps);
