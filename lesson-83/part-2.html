@@ -24,7 +24,6 @@
             justify-content: center;
             margin: 0;
             padding: 20px;
-            /* Прокрутка дозволена для випадків масштабування */
             overflow-y: auto; 
         }
 
@@ -55,7 +54,6 @@
             text-align: center;
             border-radius: 8px;
             font-size: 0.9rem;
-            text-transform: none;
         }
 
         td {
@@ -67,7 +65,6 @@
         td:first-child { border-radius: 10px 0 0 10px; }
         td:last-child { border-radius: 0 10px 10px 0; }
 
-        /* Курсив для фізичних величин */
         .var {
             font-style: italic;
             font-family: 'Georgia', serif;
@@ -77,7 +74,7 @@
             background: white;
             color: #1e293b;
             border-radius: 6px;
-            width: 90px;
+            width: 100px;
             padding: 0.4rem;
             text-align: center;
             font-weight: bold;
@@ -113,7 +110,6 @@
 
         .hint-btn:hover { transform: scale(1.2) rotate(15deg); }
 
-        /* Стиль підказки */
         #hint-overlay {
             display: none;
             position: fixed;
@@ -151,17 +147,19 @@
         }
 
         .refresh-btn {
-            background: white;
-            color: #0f172a;
-            padding: 0.6rem 2rem;
+            background: #2563eb;
+            color: white;
+            padding: 0.8rem 2.5rem;
             border-radius: 50px;
             font-weight: bold;
             transition: all 0.3s;
             margin-top: 1.5rem;
             align-self: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        .refresh-btn:hover { background: #e2e8f0; transform: translateY(-2px); }
+        .refresh-btn:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); }
     </style>
 </head>
 <body>
@@ -183,17 +181,17 @@
                     </tr>
                 </thead>
                 <tbody id="exercise-body">
-                    <!-- JS Rows -->
+                    <!-- JS Rows will be generated here -->
                 </tbody>
             </table>
         </div>
 
-        <button onclick="location.reload()" class="refresh-btn">
-            ОНОВИТИ ЗАВДАННЯ
+        <button onclick="generateTable()" class="refresh-btn">
+            ЗГЕНЕРУВАТИ НОВІ ЗАВДАННЯ
         </button>
     </div>
 
-    <!-- Модальне вікно -->
+    <!-- Модальне вікно підказки -->
     <div id="overlay-bg" class="overlay-bg" onclick="closeHint()"></div>
     <div id="hint-overlay">
         <h3 class="text-lg font-bold mb-3">Тобі знадобиться формула:</h3>
@@ -202,16 +200,6 @@
     </div>
 
     <script>
-        // Сценарії (rho l S I U)
-        const scenarios = [
-            { u: 12,   i: 2,   rho: 0.1,   l: 120,  s: 2,    missing: 'u' },
-            { u: 220,  i: null,rho: 0.017, l: 100,  s: 1.5,  missing: 'i' },
-            { u: 4.5,  i: 0.5, rho: null,  l: 10,   s: 0.5,  missing: 'rho' },
-            { u: 10,   i: 1,   rho: 0.5,   l: null, s: 2,    missing: 'l' },
-            { u: 36,   i: 3,   rho: 0.028, l: 50,   s: null, missing: 's' }
-        ];
-
-        // Формули з коректними символами
         const formulas = {
             u: `<span class="var">U</span> = <div class="fraction"><span class="num"><span class="var">I</span> <span class="var">ρ</span> <span class="var">l</span></span><span class="den"><span class="var">S</span></span></div>`,
             i: `<span class="var">I</span> = <div class="fraction"><span class="num"><span class="var">U</span> <span class="var">S</span></span><span class="den"><span class="var">ρ</span> <span class="var">l</span></span></div>`,
@@ -220,12 +208,46 @@
             s: `<span class="var">S</span> = <div class="fraction"><span class="num"><span class="var">I</span> <span class="var">ρ</span> <span class="var">l</span></span><span class="den"><span class="var">U</span></span></div>`
         };
 
-        function calculateMissing(s) {
-            if (s.missing === 'u') return (s.i * s.rho * s.l) / s.s;
-            if (s.missing === 'i') return (s.u * s.s) / (s.rho * s.l);
-            if (s.missing === 'rho') return (s.u * s.s) / (s.i * s.l);
-            if (s.missing === 'l') return (s.u * s.s) / (s.i * s.rho);
-            if (s.missing === 's') return (s.i * s.rho * s.l) / s.u;
+        const resistivityValues = [0.017, 0.028, 0.1, 0.4, 1.1, 0.5]; // Мідь, Алюміній, Залізо і т.д.
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function getRandomFloat(min, max, decimals) {
+            const str = (Math.random() * (max - min) + min).toFixed(decimals);
+            return parseFloat(str);
+        }
+
+        function createScenario(targetVar) {
+            let u, i, rho, l, s;
+            
+            // Генеруємо базові значення
+            rho = resistivityValues[Math.floor(Math.random() * resistivityValues.length)];
+            l = getRandomInt(1, 20) * 10; // 10, 20... 200 м
+            s = getRandomFloat(0.5, 4.0, 1); // 0.5... 4.0 мм2
+            i = getRandomFloat(0.5, 5.0, 1); // 0.5... 5.0 А
+
+            // Розраховуємо U на основі згенерованих даних
+            u = (i * rho * l) / s;
+            u = parseFloat(u.toFixed(1));
+
+            // Тепер, коли ми маємо збалансовану систему, призначаємо невідоме
+            const scenario = { u, i, rho, l, s, missing: targetVar };
+            
+            // Перераховуємо точну відповідь для обраного невідомого
+            scenario.answer = calculateExact(scenario);
+            return scenario;
+        }
+
+        function calculateExact(scen) {
+            switch(scen.missing) {
+                case 'u': return (scen.i * scen.rho * scen.l) / scen.s;
+                case 'i': return (scen.u * scen.s) / (scen.rho * scen.l);
+                case 'rho': return (scen.u * scen.s) / (scen.i * scen.l);
+                case 'l': return (scen.u * scen.s) / (scen.i * scen.rho);
+                case 's': return (scen.i * scen.rho * scen.l) / scen.u;
+            }
         }
 
         function showHint(key) {
@@ -245,9 +267,10 @@
                 input.classList.remove('correct', 'wrong');
                 return;
             }
-            // Точність 5%
-            const threshold = correct * 0.05 || 0.1;
-            if (Math.abs(val - correct) < threshold) {
+            
+            // Допуск 5% для заокруглень учнем
+            const tolerance = correct * 0.05;
+            if (Math.abs(val - correct) <= tolerance) {
                 input.classList.add('correct');
                 input.classList.remove('wrong');
             } else {
@@ -256,24 +279,29 @@
             }
         }
 
-        function initTable() {
+        function generateTable() {
             const container = document.getElementById('exercise-body');
-            scenarios.forEach((s) => {
+            container.innerHTML = '';
+            
+            const vars = ['u', 'i', 'rho', 'l', 's'];
+            
+            // Створюємо по одному рядку для кожного типу невідомого
+            vars.forEach(v => {
+                const scen = createScenario(v);
                 const tr = document.createElement('tr');
-                const answer = calculateMissing(s);
-                const cols = ['u', 'i', 'rho', 'l', 's'];
                 
-                cols.forEach(col => {
+                vars.forEach(col => {
                     const td = document.createElement('td');
-                    if (s.missing === col) {
+                    if (scen.missing === col) {
                         td.innerHTML = `
                             <div class="flex items-center justify-center">
-                                <input type="text" class="var-input" placeholder="?" oninput="checkAnswer(this, ${answer})">
+                                <input type="text" class="var-input" placeholder="?" 
+                                    oninput="checkAnswer(this, ${scen.answer})">
                                 <span class="hint-btn" onclick="showHint('${col}')">💡</span>
                             </div>
                         `;
                     } else {
-                        td.innerHTML = `<span class="var-display var">${s[col]}</span>`;
+                        td.innerHTML = `<span class="var-display var">${scen[col]}</span>`;
                     }
                     tr.appendChild(td);
                 });
@@ -281,7 +309,7 @@
             });
         }
 
-        window.onload = initTable;
+        window.onload = generateTable;
     </script>
 </body>
 </html>
