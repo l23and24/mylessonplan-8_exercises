@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Фізика: Таблиця розрахунків</title>
+    <title>Фізика: Таблиця розрахунків (Заокруглення до десятих)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes gradientBG {
@@ -24,7 +24,6 @@
             justify-content: center;
             margin: 0;
             padding: 20px;
-            overflow-y: auto; 
         }
 
         .table-container {
@@ -165,9 +164,12 @@
 <body>
 
     <div class="table-container">
-        <h1 class="text-xl md:text-2xl font-bold text-center mb-6 text-white tracking-wide">
-            Тренажер: Розрахунок параметрів провідника
+        <h1 class="text-xl md:text-2xl font-bold text-center mb-2 text-white tracking-wide">
+            Фізика: Розрахунок параметрів провідника
         </h1>
+        <p class="text-slate-300 text-center mb-6 text-sm">
+            Примітка: Результати обчислень заокруглюйте до <b>десятих</b> (один знак після коми).
+        </p>
         
         <div class="overflow-x-auto">
             <table>
@@ -181,20 +183,19 @@
                     </tr>
                 </thead>
                 <tbody id="exercise-body">
-                    <!-- JS Rows will be generated here -->
+                    <!-- JS Rows -->
                 </tbody>
             </table>
         </div>
 
         <button onclick="generateTable()" class="refresh-btn">
-            ЗГЕНЕРУВАТИ НОВІ ЗАВДАННЯ
+            Згенерувати нові завдання
         </button>
     </div>
 
-    <!-- Модальне вікно підказки -->
     <div id="overlay-bg" class="overlay-bg" onclick="closeHint()"></div>
     <div id="hint-overlay">
-        <h3 class="text-lg font-bold mb-3">Тобі знадобиться формула:</h3>
+        <h3 class="text-lg font-bold mb-3">Формула для розрахунку:</h3>
         <div id="hint-formula" class="text-3xl py-4"></div>
         <button onclick="closeHint()" class="mt-2 bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-semibold">Зрозумів</button>
     </div>
@@ -208,45 +209,63 @@
             s: `<span class="var">S</span> = <div class="fraction"><span class="num"><span class="var">I</span> <span class="var">ρ</span> <span class="var">l</span></span><span class="den"><span class="var">U</span></span></div>`
         };
 
-        const resistivityValues = [0.017, 0.028, 0.1, 0.4, 1.1, 0.5]; // Мідь, Алюміній, Залізо і т.д.
-
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-
-        function getRandomFloat(min, max, decimals) {
-            const str = (Math.random() * (max - min) + min).toFixed(decimals);
-            return parseFloat(str);
-        }
+        const resistivityValues = [0.017, 0.028, 0.1, 0.4, 0.5, 1.1];
 
         function createScenario(targetVar) {
             let u, i, rho, l, s;
             
-            // Генеруємо базові значення
+            // Випадкові дані
             rho = resistivityValues[Math.floor(Math.random() * resistivityValues.length)];
-            l = getRandomInt(1, 20) * 10; // 10, 20... 200 м
-            s = getRandomFloat(0.5, 4.0, 1); // 0.5... 4.0 мм2
-            i = getRandomFloat(0.5, 5.0, 1); // 0.5... 5.0 А
-
-            // Розраховуємо U на основі згенерованих даних
-            u = (i * rho * l) / s;
+            s = (Math.random() * 3 + 0.5).toFixed(1); // 0.5 - 3.5
+            l = (Math.floor(Math.random() * 15) + 1) * 10; // 10, 20... 150
+            i = (Math.random() * 4 + 0.5).toFixed(1); // 0.5 - 4.5
+            
+            // Базовий розрахунок U для створення збалансованого рядка
+            u = (parseFloat(i) * rho * parseFloat(l)) / parseFloat(s);
             u = parseFloat(u.toFixed(1));
 
-            // Тепер, коли ми маємо збалансовану систему, призначаємо невідоме
-            const scenario = { u, i, rho, l, s, missing: targetVar };
+            const scenario = { 
+                u: parseFloat(u), 
+                i: parseFloat(i), 
+                rho: rho, 
+                l: parseInt(l), 
+                s: parseFloat(s), 
+                missing: targetVar 
+            };
             
-            // Перераховуємо точну відповідь для обраного невідомого
-            scenario.answer = calculateExact(scenario);
+            // Розраховуємо ТОЧНУ відповідь, яку потім треба заокруглити до десятих
+            scenario.correctRounded = calculateAndRound(scenario);
             return scenario;
         }
 
-        function calculateExact(scen) {
+        function calculateAndRound(scen) {
+            let res;
             switch(scen.missing) {
-                case 'u': return (scen.i * scen.rho * scen.l) / scen.s;
-                case 'i': return (scen.u * scen.s) / (scen.rho * scen.l);
-                case 'rho': return (scen.u * scen.s) / (scen.i * scen.l);
-                case 'l': return (scen.u * scen.s) / (scen.i * scen.rho);
-                case 's': return (scen.i * scen.rho * scen.l) / scen.u;
+                case 'u': res = (scen.i * scen.rho * scen.l) / scen.s; break;
+                case 'i': res = (scen.u * scen.s) / (scen.rho * scen.l); break;
+                case 'rho': res = (scen.u * scen.s) / (scen.i * scen.l); break;
+                case 'l': res = (scen.u * scen.s) / (scen.i * scen.rho); break;
+                case 's': res = (scen.i * scen.rho * scen.l) / scen.u; break;
+            }
+            // Заокруглення до десятих (один знак після коми) за математичними правилами
+            return Math.round(res * 10) / 10;
+        }
+
+        function checkAnswer(input, correct) {
+            const val = parseFloat(input.value.replace(',', '.'));
+            
+            if (isNaN(val)) {
+                input.classList.remove('correct', 'wrong');
+                return;
+            }
+            
+            // Порівнюємо введене значення із заокругленим правильним
+            if (val === correct) {
+                input.classList.add('correct');
+                input.classList.remove('wrong');
+            } else {
+                input.classList.add('wrong');
+                input.classList.remove('correct');
             }
         }
 
@@ -261,31 +280,11 @@
             document.getElementById('overlay-bg').style.display = 'none';
         }
 
-        function checkAnswer(input, correct) {
-            const val = parseFloat(input.value.replace(',', '.'));
-            if (isNaN(val)) {
-                input.classList.remove('correct', 'wrong');
-                return;
-            }
-            
-            // Допуск 5% для заокруглень учнем
-            const tolerance = correct * 0.05;
-            if (Math.abs(val - correct) <= tolerance) {
-                input.classList.add('correct');
-                input.classList.remove('wrong');
-            } else {
-                input.classList.add('wrong');
-                input.classList.remove('correct');
-            }
-        }
-
         function generateTable() {
             const container = document.getElementById('exercise-body');
             container.innerHTML = '';
-            
             const vars = ['u', 'i', 'rho', 'l', 's'];
             
-            // Створюємо по одному рядку для кожного типу невідомого
             vars.forEach(v => {
                 const scen = createScenario(v);
                 const tr = document.createElement('tr');
@@ -295,8 +294,8 @@
                     if (scen.missing === col) {
                         td.innerHTML = `
                             <div class="flex items-center justify-center">
-                                <input type="text" class="var-input" placeholder="?" 
-                                    oninput="checkAnswer(this, ${scen.answer})">
+                                <input type="text" class="var-input" placeholder="0.0" 
+                                    oninput="checkAnswer(this, ${scen.correctRounded})">
                                 <span class="hint-btn" onclick="showHint('${col}')">💡</span>
                             </div>
                         `;
